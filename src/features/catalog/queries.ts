@@ -61,10 +61,10 @@ export async function getSeason(slug: string) {
     client.from('chapters').select('id,season_id,number,title,reading_range,youtube_url,summary,published_at').eq('season_id', season.id).or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`).order('number', { ascending: true }),
     client.rpc('get_season_chapter_access', { p_season: season.id }),
     client.from('milestones').select('id,title,description,chapter_from,chapter_to,target_date').eq('season_id', season.id).order('position', { ascending: true }).limit(24),
-    readerId ? client.from('user_milestone_progress').select('milestone_id,completed_at').eq('user_id', readerId).limit(100) : Promise.resolve({ data: [], error: null }),
+    readerId ? client.rpc('get_user_milestone_status', { p_user: readerId, p_season_id: season.id }) : Promise.resolve({ data: [], error: null }),
   ]);
-  const completed = new Set((progressResult.data ?? []).filter((row) => Boolean(row.completed_at)).map((row) => row.milestone_id));
-  const milestones = ((milestoneResult.data ?? []) as Omit<SeasonMilestone, 'completed'>[]).map((milestone) => ({ ...milestone, completed: completed.has(milestone.id) }));
+  const completed = new Map((progressResult.data ?? []).map((row: { milestone_id: string; completed: boolean }) => [row.milestone_id, row.completed]));
+  const milestones = ((milestoneResult.data ?? []) as Omit<SeasonMilestone, 'completed'>[]).map((milestone) => ({ ...milestone, completed: completed.get(milestone.id) === true }));
   return { season: season as Season, book: book.data, chapters: (chapterResult.data ?? []) as Chapter[], chapterAccess: (accessResult.data ?? []) as ChapterAccess[], milestones };
 }
 

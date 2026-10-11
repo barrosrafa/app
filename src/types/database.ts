@@ -3039,6 +3039,7 @@ export type Database = {
       }
       reading_journal_entries: {
         Row: {
+          archived_at: string | null
           body: string
           book_id: string
           chapter_id: string | null
@@ -3062,6 +3063,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["journal_visibility"]
         }
         Insert: {
+          archived_at?: string | null
           body: string
           book_id: string
           chapter_id?: string | null
@@ -3085,6 +3087,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["journal_visibility"]
         }
         Update: {
+          archived_at?: string | null
           body?: string
           book_id?: string
           chapter_id?: string | null
@@ -5079,6 +5082,10 @@ export type Database = {
           shared_moods: Database["public"]["Enums"]["mood_kind"][]
         }[]
       }
+      get_user_milestone_status: {
+        Args: { p_season_id: string; p_user: string }
+        Returns: { completed: boolean; milestone_id: string }[]
+      }
       get_season_chapter_access: {
         Args: { p_season: string }
         Returns: {
@@ -5092,6 +5099,7 @@ export type Database = {
         }[]
       }
       is_admin: { Args: never; Returns: boolean }
+      is_book_complete: { Args: { p_book_id: string; p_user: string }; Returns: boolean }
       remove_own_chapter_comment: { Args: { p_chapter_id: string; p_comment_id: string }; Returns: boolean }
       join_user_club: { Args: { p_club: string }; Returns: boolean }
       leave_user_club: { Args: { p_club: string }; Returns: boolean }

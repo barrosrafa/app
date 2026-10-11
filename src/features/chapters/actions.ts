@@ -102,7 +102,7 @@ export async function saveChapterProgress(input: unknown): Promise<ChapterAction
 
   const { chapterId, status, percent } = parsed.data;
   if (!await chapterIsAvailable(session.supabase, chapterId)) return { ok: false, message: 'Este capítulo ainda não está disponível para progresso.' };
-  const { data: currentProgress } = await session.supabase.from('user_progress').select('status,percent,started_at').eq('user_id', session.userId).eq('chapter_id', chapterId).maybeSingle();
+  const { data: currentProgress } = await session.supabase.from('user_progress').select('status,percent,started_at,finished_at').eq('user_id', session.userId).eq('chapter_id', chapterId).maybeSingle();
   const finished = status === 'read';
   if (!finished && currentProgress?.status === 'read') {
     return { ok: false, message: 'Este capítulo já foi concluído e não pode regredir.' };
@@ -114,6 +114,7 @@ export async function saveChapterProgress(input: unknown): Promise<ChapterAction
     percent: finished ? 100 : Math.max(0, Math.min(99, percent ?? currentProgress?.percent ?? 1)),
     started_at: currentProgress?.started_at ?? new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    finished_at: finished ? (currentProgress?.finished_at ?? new Date().toISOString()) : null,
   }, { onConflict: 'user_id,chapter_id' });
   if (error) {
     console.error('Progress write failed', error.code);

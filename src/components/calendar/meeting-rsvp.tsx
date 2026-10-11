@@ -12,9 +12,10 @@ export type MeetingRsvpProps = {
   initialAttending: boolean | null;
   /** Optional so a server page can avoid showing RSVP controls to signed-out visitors. */
   signedIn?: boolean;
+  disabled?: boolean;
 };
 
-export function MeetingRsvp({ meetingId, initialAttending, signedIn = true }: MeetingRsvpProps) {
+export function MeetingRsvp({ meetingId, initialAttending, signedIn = true, disabled = false }: MeetingRsvpProps) {
   const [attending, setAttending] = useState(initialAttending);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [isPending, startTransition] = useTransition();
@@ -54,7 +55,7 @@ export function MeetingRsvp({ meetingId, initialAttending, signedIn = true }: Me
             className="button button-small"
             type="button"
             aria-pressed={attending === true}
-            disabled={isPending}
+            disabled={isPending || disabled}
             onClick={() => chooseRsvp(true)}
           >
             {isPending && attending !== true ? 'Salvando…' : 'Aceitar'}
@@ -63,7 +64,7 @@ export function MeetingRsvp({ meetingId, initialAttending, signedIn = true }: Me
             className="button button-quiet button-small"
             type="button"
             aria-pressed={attending === false}
-            disabled={isPending}
+            disabled={isPending || disabled}
             onClick={() => chooseRsvp(false)}
           >
             {isPending && attending !== false ? 'Salvando…' : 'Cancelar'}

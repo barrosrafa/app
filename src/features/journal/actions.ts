@@ -13,3 +13,16 @@ export async function createJournalEntry(input: unknown) {
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   revalidatePath('/diario'); return { ok: true, message: 'Registro salvo no seu diário.' };
 }
+
+async function setArchived(id: string, archived: boolean) {
+  const session = await requireSession();
+  const parsed = z.string().uuid().safeParse(id);
+  if (!session || !parsed.success) return { ok: false, message: 'Não foi possível atualizar este registro.' };
+  const { error } = await session.client.from('reading_journal_entries').update({ archived_at: archived ? new Date().toISOString() : null, updated_at: new Date().toISOString() }).eq('id', parsed.data).eq('user_id', session.userId);
+  if (error) return { ok: false, message: 'Não foi possível atualizar este registro.' };
+  revalidatePath('/diario');
+  return { ok: true, message: archived ? 'Registro arquivado.' : 'Registro restaurado.' };
+}
+
+export async function archiveJournalEntry(id: string) { return setArchived(id, true); }
+export async function restoreJournalEntry(id: string) { return setArchived(id, false); }

@@ -5,6 +5,7 @@ import { MeetingRsvp } from '@/components/calendar/meeting-rsvp';
 import { createServerSupabase } from '@/lib/supabase/clients';
 import { getMeetings } from '@/features/catalog/queries';
 import { getMeetingRsvpMap } from '@/features/meetings/rsvp-actions';
+import { getMeetingState, type MeetingState } from '@/features/meetings/state';
 
 export const metadata: Metadata = {
   title: 'Encontros',
@@ -23,16 +24,10 @@ export default async function CalendarPage() {
   }
   const rsvps = signedIn ? await getMeetingRsvpMap(meetings.map((meeting) => meeting.id)) : {};
   const now = Date.now();
-  const getState = (meeting: typeof meetings[number]) => {
-    const start = new Date(meeting.scheduled_at).getTime();
-    const end = start + (meeting.duration_min ?? 60) * 60_000;
-    if (meeting.status === 'cancelled') return 'cancelled';
-    if (meeting.status === 'live' || (start <= now && now < end)) return 'live';
-    if (end <= now || meeting.status === 'done') return 'finished';
-    return 'upcoming';
-  };
+  const getState = (meeting: typeof meetings[number]): MeetingState => getMeetingState(meeting, now);
   const upcoming = meetings.filter((meeting) => ['live', 'upcoming'].includes(getState(meeting)));
   const finished = meetings.filter((meeting) => getState(meeting) === 'finished');
+  const cancelled = meetings.filter((meeting) => getState(meeting) === 'cancelled');
   const formatDate = (date: Date) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(date);
   const renderMeeting = (meeting: typeof meetings[number]) => {
     const date = new Date(meeting.scheduled_at);
@@ -40,8 +35,8 @@ export default async function CalendarPage() {
     const label = state === 'live' ? 'AO VIVO' : state === 'finished' ? 'ENCERRADO' : state === 'cancelled' ? 'CANCELADO' : 'PRÓXIMO';
     return <article className="meeting-row calendar-card" key={meeting.id}>
       <div className="calendar-date"><strong>{new Intl.DateTimeFormat('pt-BR', { day: '2-digit', timeZone: 'America/Sao_Paulo' }).format(date)}</strong><span>{new Intl.DateTimeFormat('pt-BR', { month: 'short', timeZone: 'America/Sao_Paulo' }).format(date)}</span></div>
-      <div style={{ flex: 1 }}><h3>{meeting.title}</h3><p>{formatDate(date)}{meeting.duration_min ? ` · ${meeting.duration_min} min` : ''}</p>{meeting.agenda && <p>{meeting.agenda}</p>}{meeting.location && <p>{meeting.location}</p>}{meeting.meeting_url && /^https:\/\//i.test(meeting.meeting_url) && state !== 'finished' && <p><a className="text-link" href={meeting.meeting_url} target="_blank" rel="noopener noreferrer">Abrir encontro ↗</a></p>}<MeetingRsvp meetingId={meeting.id} initialAttending={rsvps[meeting.id] ?? null} signedIn={signedIn} /></div>
-      <div style={{ display: 'grid', gap: 10, justifyItems: 'end' }}><span className={`status-pill${state === 'finished' ? ' neutral' : ''}`}>{label}</span><a className="text-link" href={`/api/ics/${meeting.id}`}>Adicionar à agenda ↓</a></div>
+      <div style={{ flex: 1 }}><h3>{meeting.title}</h3><p>{formatDate(date)}{meeting.duration_min ? ` · ${meeting.duration_min} min` : ''}</p>{meeting.agenda && <p>{meeting.agenda}</p>}{meeting.location && <p>{meeting.location}</p>}{meeting.meeting_url && /^https:\/\//i.test(meeting.meeting_url) && !['finished', 'cancelled'].includes(state) && <p><a className="text-link" href={meeting.meeting_url} target="_blank" rel="noopener noreferrer">Abrir encontro ↗</a></p>}{state !== 'cancelled' && <MeetingRsvp meetingId={meeting.id} initialAttending={rsvps[meeting.id] ?? null} signedIn={signedIn} disabled={state === 'finished'} />}</div>
+      <div style={{ display: 'grid', gap: 10, justifyItems: 'end' }}><span className={`status-pill${state === 'finished' || state === 'cancelled' ? ' neutral' : ''}`}>{label}</span>{state === 'cancelled' && <span className="field-hint">Este encontro foi cancelado.</span>}<a className="text-link" href={`/api/ics/${meeting.id}`}>Adicionar à agenda ↓</a></div>
     </article>;
   };
 
@@ -58,5 +53,6 @@ export default async function CalendarPage() {
       <div className="empty-actions"><Link className="button button-dark button-small" href="/livros">Ver leituras do clube</Link></div>
     </div>}
     {finished.length > 0 && <section className="meeting-list section" style={{ paddingTop: 10 }} aria-labelledby="finished-meetings"><div className="section-head"><div><span className="eyebrow">Memória do clube</span><h2 id="finished-meetings">Encontros encerrados</h2></div></div>{finished.map(renderMeeting)}</section>}
+    {cancelled.length > 0 && <section className="meeting-list section" style={{ paddingTop: 10 }} aria-labelledby="cancelled-meetings"><div className="section-head"><div><span className="eyebrow">Agenda atualizada</span><h2 id="cancelled-meetings">Encontros cancelados</h2></div></div>{cancelled.map(renderMeeting)}</section>}
   </section>;
 }
