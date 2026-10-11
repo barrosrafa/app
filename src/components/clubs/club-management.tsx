@@ -10,11 +10,13 @@ import {
 
 type Member = { user_id: string; role: string };
 type Invitation = { id: string; invited_user_id: string; expires_at: string };
+type SeasonOption = { id: string; title: string; slug: string };
 
 export function ClubManagement({
   club,
   members,
   invitations,
+  seasons = [],
 }: {
   club: {
     id: string;
@@ -23,15 +25,18 @@ export function ClubManagement({
     name: string;
     description: string | null;
     is_private: boolean;
+    current_season_id?: string | null;
   };
   members: Member[];
   invitations: Invitation[];
+  seasons?: SeasonOption[];
 }) {
   const [feedback, setFeedback] = useState('');
   const [busy, start] = useTransition();
 
   function save(form: FormData) {
     start(async () => {
+      const seasonValue = form.get('seasonId') as string;
       const result = await updateClub({
         clubId: club.id,
         slug: club.slug,
@@ -39,6 +44,7 @@ export function ClubManagement({
         name: form.get('name'),
         description: form.get('description'),
         isPrivate: form.get('private') === 'on',
+        seasonId: seasonValue ? seasonValue : null,
       });
       setFeedback(result.message);
     });
@@ -78,6 +84,26 @@ export function ClubManagement({
             defaultValue={club.description ?? ''}
           />
         </label>
+        {seasons.length > 0 && (
+          <label>
+            Ciclo e temporada de leitura
+            <select
+              className="field"
+              name="seasonId"
+              defaultValue={club.current_season_id ?? ''}
+            >
+              <option value="">Nenhuma temporada selecionada</option>
+              {seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.title}
+                </option>
+              ))}
+            </select>
+            <span className="field-hint">
+              Ao selecionar uma temporada, os membros do clube poderão acompanhar os capítulos deste ciclo diretamente.
+            </span>
+          </label>
+        )}
         <label className="checkbox-line">
           <input type="checkbox" name="private" defaultChecked={club.is_private} /> Clube privado
         </label>

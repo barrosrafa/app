@@ -471,10 +471,10 @@ img, svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   color: var(--text-primary);
@@ -530,6 +530,10 @@ img, svg {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.nav-mobile-panel[hidden] {
+  display: none !important;
 }
 
 .nav-mobile-panel.open {

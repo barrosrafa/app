@@ -21,6 +21,7 @@ type CommunityPost = {
 export default async function CommunityPage() {
   let posts: CommunityPost[] = [];
   let viewerId: string | null = null;
+  let hasError = false;
   const chapters = new Map<string, { id: string; title: string; number: number }>();
   const authors = new Map<string, { display_name: string | null; username: string | null }>();
 
@@ -29,22 +30,29 @@ export default async function CommunityPage() {
       const client = await createServerSupabase();
       const { data: claims } = await client.auth.getClaims();
       viewerId = typeof claims?.claims?.sub === 'string' ? claims.claims.sub : null;
-      const { data } = await client
+      const { data, error } = await client
         .from('v_comments_visible')
         .select('id,chapter_id,user_id,content,is_spoiler,is_locked,created_at')
         .order('created_at', { ascending: false })
         .limit(100);
-      posts = (data ?? []) as CommunityPost[];
-      const chapterIds = [...new Set(posts.map((post) => post.chapter_id))];
-      const userIds = [...new Set(posts.map((post) => post.user_id))];
-      const [{ data: chapterRows }, { data: authorRows }] = await Promise.all([
-        client.from('chapters').select('id,title,number').in('id', chapterIds),
-        client.from('v_profiles_public').select('id,display_name,username').in('id', userIds),
-      ]);
-      for (const chapter of chapterRows ?? []) chapters.set(chapter.id, chapter);
-      for (const author of authorRows ?? []) if (author.id) authors.set(author.id, author);
+
+      if (error) {
+        console.error('Community feed query failed', error.code);
+        hasError = true;
+      } else {
+        posts = (data ?? []) as CommunityPost[];
+        const chapterIds = [...new Set(posts.map((post) => post.chapter_id))];
+        const userIds = [...new Set(posts.map((post) => post.user_id))];
+        const [{ data: chapterRows }, { data: authorRows }] = await Promise.all([
+          client.from('chapters').select('id,title,number').in('id', chapterIds),
+          client.from('v_profiles_public').select('id,display_name,username').in('id', userIds),
+        ]);
+        for (const chapter of chapterRows ?? []) chapters.set(chapter.id, chapter);
+        for (const author of authorRows ?? []) if (author.id) authors.set(author.id, author);
+      }
     } catch (error) {
       console.error('Community feed unavailable', error instanceof Error ? error.name : 'unknown_error');
+      hasError = true;
     }
   }
 
@@ -59,7 +67,12 @@ export default async function CommunityPage() {
         <p>Impressões, perguntas e aqueles detalhes que só aparecem quando a gente lê junto.</p>
       </header>
 
-      {posts.length ? (
+      {hasError ? (
+        <div className="empty-state">
+          <h2>Não foi possível carregar as conversas da comunidade agora.</h2>
+          <p>Tente atualizar a página em alguns instantes.</p>
+        </div>
+      ) : posts.length ? (
         <div className="section" style={{ paddingTop: 10 }}>
           <div className="timeline">
             {posts.map((post) => {

@@ -7,21 +7,33 @@ import { JournalEntryActions } from '@/components/journal/journal-entry-actions'
 import { getJournalEntries } from '@/features/journal/queries';
 
 type BookOption = { id: string; title: string };
-export const metadata: Metadata = { title: 'Diário de leitura', description: 'Suas anotações privadas de leitura.', robots: { index: false, follow: false } };
-export default async function JournalPage({ searchParams }: { searchParams: Promise<{ cursor?: string }> }) {
+
+export const metadata: Metadata = {
+  title: 'Diário de leitura',
+  description: 'Suas anotações privadas de leitura.',
+  robots: { index: false, follow: false },
+};
+
+export default async function JournalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cursor?: string; tab?: string }>;
+}) {
   const session = await requireSession();
   if (!session) redirect('/entrar?redirect=/diario');
-  // The generated database contract is refreshed after applying the lifecycle migration.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = session.client as any;
-  const { cursor } = await searchParams;
+
+  const { cursor, tab } = await searchParams;
+  const isArchivedTab = tab === 'arquivados';
+
   const [{ data: rawBooks }, journal] = await Promise.all([
-    db.from('books').select('id,title').order('title').limit(100),
-    getJournalEntries(session.userId, cursor),
-  ]) as [{ data: BookOption[] | null }, Awaited<ReturnType<typeof getJournalEntries>>];
-  const books = rawBooks ?? [];
+    session.client.from('books').select('id,title').order('title').limit(100),
+    getJournalEntries(session.userId, cursor, 20, isArchivedTab),
+  ]);
+
+  const books = (rawBooks ?? []) as BookOption[];
   const entries = journal.data ?? [];
   const bookMap = new Map<string, string>(books.map((book) => [book.id, book.title]));
+
   return (
     <section className="container">
       <header className="page-intro">
@@ -32,17 +44,34 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
         </h1>
         <p>Um diário privado para guardar ideias, ritmo e pequenas descobertas. Seu diário é privado.</p>
       </header>
-      <JournalEntryForm books={books} />
+
+      {!isArchivedTab && <JournalEntryForm books={books} />}
+
       <section className="section">
         <div className="section-head">
           <div>
             <span className="eyebrow">Memória</span>
-            <h2>Registros recentes</h2>
+            <h2>{isArchivedTab ? 'Registros arquivados' : 'Registros recentes'}</h2>
           </div>
-          <Link className="text-link" href="/livros">
-            Explorar livros →
-          </Link>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Link
+              className={`button button-small ${!isArchivedTab ? 'button-dark' : 'button-quiet'}`}
+              href="/diario"
+            >
+              Ativos
+            </Link>
+            <Link
+              className={`button button-small ${isArchivedTab ? 'button-dark' : 'button-quiet'}`}
+              href="/diario?tab=arquivados"
+            >
+              Arquivados
+            </Link>
+            <Link className="text-link" href="/livros" style={{ marginLeft: '8px' }}>
+              Explorar livros →
+            </Link>
+          </div>
         </div>
+
         {journal.error ? (
           <div className="empty-state">
             <h2>Não foi possível carregar seu diário agora.</h2>
@@ -59,7 +88,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
                         new Date(`${entry.entry_date}T12:00:00`),
                       )}
                     </span>
-                    <JournalEntryActions id={entry.id} />
+                    <JournalEntryActions id={entry.id} archived={Boolean(entry.archived_at)} />
                   </div>
                   <h3>
                     {entry.title || bookMap.get(entry.book_id) || 'Registro de leitura'}
@@ -70,6 +99,7 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
                     {entry.page_from ? ` · páginas ${entry.page_from}${entry.page_to ? `–${entry.page_to}` : ''}` : ''}
                     {entry.minutes_read ? ` · ${entry.minutes_read} min` : ''}
                     {entry.is_spoiler ? ' · spoiler marcado' : ''}
+                    {entry.archived_at ? ' · arquivado' : ''}
                   </p>
                 </article>
               ))}
@@ -78,7 +108,13 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
               <div className="hero-actions">
                 <Link
                   className="button button-quiet button-small"
-                  href={{ pathname: '/diario', query: { cursor: journal.nextCursor } }}
+                  href={{
+                    pathname: '/diario',
+                    query: {
+                      cursor: journal.nextCursor,
+                      ...(isArchivedTab ? { tab: 'arquivados' } : {}),
+                    },
+                  }}
                 >
                   Carregar registros anteriores
                 </Link>
@@ -88,8 +124,12 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
         ) : (
           <div className="empty-state">
             <div className="empty-state-mark" aria-hidden="true">✎</div>
-            <h2>Seu diário começa aqui</h2>
-            <p>Registre uma impressão depois do próximo capítulo.</p>
+            <h2>{isArchivedTab ? 'Nenhum registro arquivado' : 'Seu diário começa aqui'}</h2>
+            <p>
+              {isArchivedTab
+                ? 'Quando arquivar um registro de leitura, ele ficará guardado aqui para consulta ou restauração.'
+                : 'Registre uma impressão depois do próximo capítulo.'}
+            </p>
           </div>
         )}
       </section>

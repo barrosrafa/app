@@ -7,11 +7,41 @@ import { mapDatabaseError } from '@/lib/actions/database-errors';
 import { createServerSupabase } from '@/lib/supabase/clients';
 
 const uuid = z.string().uuid();
-const bookSchema = z.object({ id: uuid, title: z.string().trim().min(1).max(200), synopsis: z.string().trim().max(20000), coverUrl: z.string().url().or(z.literal('')), totalPages: z.coerce.number().int().nonnegative().nullable() }).strict();
-const seasonSchema = z.object({ id: uuid, title: z.string().trim().min(1).max(200), description: z.string().trim().max(20000), status: z.enum(['planned', 'enrolling', 'active', 'finished']) }).strict();
-const chapterSchema = z.object({ id: uuid, title: z.string().trim().min(1).max(200), readingRange: z.string().trim().max(500), summary: z.string().trim().max(20000), youtubeUrl: z.string().url().or(z.literal('')), publishedAt: z.string().datetime().nullable() }).strict();
-const meetingSchema = z.object({ id: uuid, status: z.enum(['scheduled', 'live', 'done', 'cancelled']) }).strict();
-const pollSchema = z.object({ id: uuid, status: z.enum(['open', 'closed']) }).strict();
+const bookSchema = z.object({
+  id: uuid,
+  title: z.string().trim().min(1).max(200),
+  synopsis: z.string().trim().max(20000),
+  coverUrl: z.string().url().or(z.literal('')),
+  totalPages: z.coerce.number().int().nonnegative().nullable(),
+}).strict();
+
+const seasonSchema = z.object({
+  id: uuid,
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(20000),
+  status: z.enum(['planned', 'enrolling', 'active', 'finished']),
+}).strict();
+
+const chapterSchema = z.object({
+  id: uuid,
+  title: z.string().trim().min(1).max(200),
+  readingRange: z.string().trim().max(500),
+  summary: z.string().trim().max(20000),
+  youtubeUrl: z.string().url().or(z.literal('')),
+  publishedAt: z.string().datetime().nullable(),
+  isDraft: z.boolean().optional(),
+}).strict();
+
+const meetingSchema = z.object({
+  id: uuid,
+  status: z.enum(['scheduled', 'live', 'done', 'cancelled']),
+}).strict();
+
+const pollSchema = z.object({
+  id: uuid,
+  status: z.enum(['open', 'closed']),
+}).strict();
+
 export type AdminResult = { ok: true; message: string } | { ok: false; message: string; code?: string };
 
 async function adminContext() {
@@ -21,82 +51,157 @@ async function adminContext() {
   return !error && data === true ? session : null;
 }
 
-async function audit(client: Awaited<ReturnType<typeof createServerSupabase>>, actorId: string, entityType: string, entityId: string, action: string, changes: Record<string, unknown>) {
-  // The table is protected by the admin RLS policy; this insert is server-side and auditable.
+async function audit(
+  client: Awaited<ReturnType<typeof createServerSupabase>>,
+  actorId: string,
+  entityType: string,
+  entityId: string,
+  action: string,
+  changes: Record<string, unknown>,
+) {
   await client.from('editorial_audit_log').insert({ actor_id: actorId, entity_type: entityType, entity_id: entityId, action, changes });
 }
 
 export async function updateBook(input: unknown): Promise<AdminResult> {
-  const parsed = bookSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Confira os dados do livro.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const parsed = bookSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Confira os dados do livro.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
   const { id, title, synopsis, coverUrl, totalPages } = parsed.data;
   const { error } = await session.client.from('books').update({ title, synopsis: synopsis || null, cover_url: coverUrl || null, total_pages: totalPages }).eq('id', id);
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   await audit(session.client, session.userId, 'book', id, 'update', { title, synopsis, cover_url: coverUrl || null, total_pages: totalPages });
-  revalidatePath('/admin/books'); revalidatePath('/livros');
+  revalidatePath('/admin/books');
+  revalidatePath('/livros');
   return { ok: true, message: 'Livro salvo.' };
 }
 
 export async function updateSeason(input: unknown): Promise<AdminResult> {
-  const parsed = seasonSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Confira os dados da temporada.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const parsed = seasonSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Confira os dados da temporada.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
   const { id, title, description, status } = parsed.data;
   const { error } = await session.client.from('seasons').update({ title, description: description || null, status }).eq('id', id);
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   await audit(session.client, session.userId, 'season', id, 'update', { title, description, status });
-  revalidatePath(`/admin/seasons/${id}`); revalidatePath('/temporadas');
+  revalidatePath(`/admin/seasons/${id}`);
+  revalidatePath('/temporadas');
   return { ok: true, message: 'Temporada salva.' };
 }
 
 export async function updateChapter(input: unknown): Promise<AdminResult> {
-  const parsed = chapterSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Confira os dados do capítulo.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
-  const { id, title, readingRange, summary, youtubeUrl, publishedAt } = parsed.data;
-  if (publishedAt) {
-    if (!youtubeUrl || !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtubeUrl)) return { ok: false, message: 'Adicione um replay válido do YouTube antes de publicar.', code: 'validation' };
-    const { data: questions, error: questionsError } = await session.client.from('quiz_questions').select('options,correct_idx,chapter_reference').eq('chapter_id', id);
-    if (questionsError) return { ok: false, message: 'Não foi possível verificar as perguntas antes da publicação.', code: 'unavailable' };
-    if ((questions ?? []).some((question) => !Array.isArray(question.options) || question.options.length < 2 || typeof question.correct_idx !== 'number' || question.correct_idx < 0 || question.correct_idx >= question.options.length || !question.chapter_reference)) return { ok: false, message: 'Revise as perguntas e a referência de leitura antes de publicar.', code: 'validation' };
+  const parsed = chapterSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Confira os dados do capítulo.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const { id, title, readingRange, summary, youtubeUrl, publishedAt, isDraft } = parsed.data;
+
+  const shouldPublish = !isDraft && Boolean(publishedAt);
+
+  if (shouldPublish) {
+    if (!youtubeUrl || !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtubeUrl)) {
+      return { ok: false, message: 'Adicione um replay válido do YouTube antes de publicar.', code: 'validation' };
+    }
+    const { data: questions, error: questionsError } = await session.client
+      .from('quiz_questions')
+      .select('options,correct_idx,chapter_reference')
+      .eq('chapter_id', id);
+
+    if (questionsError) {
+      return { ok: false, message: 'Não foi possível verificar as perguntas antes da publicação.', code: 'unavailable' };
+    }
+
+    if (!questions || questions.length !== 5) {
+      return {
+        ok: false,
+        message: 'Publique exatamente cinco perguntas revisadas para este capítulo.',
+        code: 'validation',
+      };
+    }
+
+    if (
+      questions.some(
+        (question) =>
+          !Array.isArray(question.options) ||
+          question.options.length < 2 ||
+          typeof question.correct_idx !== 'number' ||
+          question.correct_idx < 0 ||
+          question.correct_idx >= question.options.length ||
+          !question.chapter_reference,
+      )
+    ) {
+      return { ok: false, message: 'Revise as perguntas e a referência de leitura antes de publicar.', code: 'validation' };
+    }
   }
-  const { error } = await session.client.from('chapters').update({ title, reading_range: readingRange || null, summary: summary || null, youtube_url: youtubeUrl || null, published_at: publishedAt }).eq('id', id);
+
+  const effectiveDraft = isDraft ?? !publishedAt;
+
+  const { error } = await session.client
+    .from('chapters')
+    .update({
+      title,
+      reading_range: readingRange || null,
+      summary: summary || null,
+      youtube_url: youtubeUrl || null,
+      published_at: publishedAt,
+      is_draft: effectiveDraft,
+    })
+    .eq('id', id);
+
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
-  await audit(session.client, session.userId, 'chapter', id, publishedAt ? 'publish_or_schedule' : 'save_draft', { title, published_at: publishedAt });
-  revalidatePath(`/capitulos/${id}`); revalidatePath('/admin');
-  return { ok: true, message: publishedAt ? 'Capítulo publicado/agendado.' : 'Rascunho salvo.' };
+  await audit(session.client, session.userId, 'chapter', id, shouldPublish ? 'publish_or_schedule' : 'save_draft', {
+    title,
+    published_at: publishedAt,
+    is_draft: effectiveDraft,
+  });
+  revalidatePath(`/capitulos/${id}`);
+  revalidatePath('/admin');
+  return { ok: true, message: shouldPublish ? 'Capítulo publicado/agendado.' : 'Rascunho salvo.' };
 }
 
 export async function updateMeeting(input: unknown): Promise<AdminResult> {
-  const parsed = meetingSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Estado de encontro inválido.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const parsed = meetingSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Estado de encontro inválido.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
   const { error } = await session.client.from('meetings').update({ status: parsed.data.status }).eq('id', parsed.data.id);
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   await audit(session.client, session.userId, 'meeting', parsed.data.id, 'status_change', { status: parsed.data.status });
-  revalidatePath('/calendario'); return { ok: true, message: 'Encontro atualizado.' };
+  revalidatePath('/calendario');
+  return { ok: true, message: 'Encontro atualizado.' };
 }
 
 export async function updatePoll(input: unknown): Promise<AdminResult> {
-  const parsed = pollSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Estado de votação inválido.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const parsed = pollSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Estado de votação inválido.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
   const { error } = await session.client.from('book_polls').update({ status: parsed.data.status }).eq('id', parsed.data.id);
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   await audit(session.client, session.userId, 'poll', parsed.data.id, 'status_change', { status: parsed.data.status });
-  revalidatePath('/votacao'); return { ok: true, message: 'Votação atualizada.' };
+  revalidatePath('/votacao');
+  return { ok: true, message: 'Votação atualizada.' };
 }
 
 export async function reviewReport(input: unknown): Promise<AdminResult> {
-  const parsed = z.object({ id: uuid, status: z.enum(['resolved', 'dismissed']) }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Revisão inválida.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (session.client as any).rpc('review_content_report', { p_report: parsed.data.id, p_status: parsed.data.status });
+  const parsed = z.object({ id: uuid, status: z.enum(['resolved', 'dismissed']) }).safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Revisão inválida.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const { error } = await session.client.rpc('review_content_report', { p_report: parsed.data.id, p_status: parsed.data.status });
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
-  revalidatePath('/admin/moderation'); return { ok: true, message: 'Denúncia revisada.' };
+  revalidatePath('/admin/moderation');
+  return { ok: true, message: 'Denúncia revisada.' };
 }
 
 export async function hideReportedContent(input: unknown): Promise<AdminResult> {
-  const parsed = z.object({ id: uuid }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Denúncia inválida.', code: 'validation' };
-  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (session.client as any).rpc('hide_reported_content', { p_report: parsed.data.id });
-  if (error) return { ok: false, ...mapDatabaseError(error.code) };
-  revalidatePath('/admin/moderation'); return { ok: true, message: 'Conteúdo ocultado e denúncia resolvida.' };
+  const parsed = z.object({ id: uuid }).safeParse(input);
+  if (!parsed.success) return { ok: false, message: 'Denúncia inválida.', code: 'validation' };
+  const session = await adminContext();
+  if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  const { data, error } = await session.client.rpc('hide_reported_content', { p_report: parsed.data.id });
+  if (error || data !== true) return { ok: false, ...mapDatabaseError(error?.code) };
+  revalidatePath('/admin/moderation');
+  return { ok: true, message: 'Conteúdo ocultado e denúncia resolvida.' };
 }

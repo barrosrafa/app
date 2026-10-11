@@ -35,7 +35,7 @@ export default async function HomePage() {
           </p>
 
           {/* App Preview Window Mockup */}
-          <div className="hero-mockup">
+          <div className="hero-mockup" aria-label="Exemplo da experiência de leitura no DIYSPUR">
             <div className="mac-window-frame">
               <div className="mac-window-toolbar">
                 <div className="mac-lights" aria-hidden="true">
@@ -45,11 +45,11 @@ export default async function HomePage() {
                 </div>
                 <div className="mac-window-title">
                   <span>📖</span>
-                  <span>DIYSPUR Reader · Leitura em Andamento</span>
+                  <span>Exemplo da experiência · DIYSPUR Reader</span>
                 </div>
                 <div className="mac-live-pill">
                   <span className="mac-live-dot" />
-                  14 leitores online
+                  Leitura coletiva
                 </div>
               </div>
 
@@ -60,11 +60,11 @@ export default async function HomePage() {
                     {featuredBook?.title ?? 'Entre Páginas e Encontros'}
                   </div>
                   <div className="mockup-chapter-row active">
-                    <span>Capítulo 3 · Ponto de Virada</span>
+                    <span>Capítulo 1 · Início do Ciclo</span>
                     <strong className="mockup-status-active">Em leitura</strong>
                   </div>
                   <div className="mockup-chapter-row">
-                    <span>Capítulo 4 · O Desfecho</span>
+                    <span>Capítulo 2 · Aprofundamento</span>
                     <span className="mockup-status-muted">Próx. semana</span>
                   </div>
                 </div>
@@ -75,16 +75,19 @@ export default async function HomePage() {
                       “A verdadeira viagem de descobrimento não consiste em procurar novas paisagens, mas em ter novos olhos.”
                     </p>
                     <span className="mockup-quote-author">
-                      — Destaque do clube no Capítulo 2
+                      — Reflexão compartilhada na conversa do capítulo
                     </span>
                   </div>
                   <div className="detail-pills">
-                    <span className="status-pill">48 anotações</span>
-                    <span className="status-pill neutral">Encontro sábado 16h</span>
+                    <span className="status-pill">Discussão aberta</span>
+                    <span className="status-pill neutral">Encontro com o clube</span>
                   </div>
                 </div>
               </div>
             </div>
+            <p className="field-hint" style={{ textAlign: 'center', marginTop: '12px' }}>
+              Exemplo demonstrativo da experiência de leitura capítulo a capítulo.
+            </p>
           </div>
         </div>
       </section>

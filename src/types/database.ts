@@ -1326,6 +1326,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_draft: boolean
           number: number
           published_at: string | null
           reading_range: string | null
@@ -1338,6 +1339,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_draft?: boolean
           number: number
           published_at?: string | null
           reading_range?: string | null
@@ -1350,6 +1352,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_draft?: boolean
           number?: number
           published_at?: string | null
           reading_range?: string | null
@@ -2080,6 +2083,42 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_user_reading_overview"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      meeting_attendance: {
+        Row: {
+          confirmed_at: string
+          meeting_id: string
+          proof_type: string | null
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string
+          meeting_id: string
+          proof_type?: string | null
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string
+          meeting_id?: string
+          proof_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_attendance_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4514,6 +4553,7 @@ export type Database = {
           chapter_id: string
           content: string
           created_at: string
+          deleted_at: string | null
           id: string
           is_spoiler: boolean
           likes_count: number
@@ -4525,6 +4565,7 @@ export type Database = {
           chapter_id: string
           content: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_spoiler?: boolean
           likes_count?: number
@@ -4536,6 +4577,7 @@ export type Database = {
           chapter_id?: string
           content?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_spoiler?: boolean
           likes_count?: number
@@ -5168,13 +5210,54 @@ export type Database = {
         Returns: boolean
       }
       unaccent: { Args: { "": string }; Returns: string }
+      add_book_to_reading_list: {
+        Args: { p_book_id: string; p_list_id: string }
+        Returns: { ok: boolean; message: string }
+      }
+      remove_reading_list_item: {
+        Args: { p_item_id: string; p_list_id: string }
+        Returns: boolean
+      }
+      restore_reading_list_item: {
+        Args: { p_item_id: string; p_list_id: string }
+        Returns: boolean
+      }
+      invite_user_to_club: {
+        Args: { p_club: string; p_expires_at: string; p_invited_user: string }
+        Returns: string
+      }
+      revoke_club_invitation: {
+        Args: { p_invitation: string }
+        Returns: boolean
+      }
+      accept_club_invitation: {
+        Args: { p_invitation: string }
+        Returns: boolean
+      }
+      remove_club_member: {
+        Args: { p_club: string; p_member: string }
+        Returns: boolean
+      }
+      review_content_report: {
+        Args: { p_report: string; p_status: string }
+        Returns: boolean
+      }
+      hide_reported_content: {
+        Args: { p_report: string }
+        Returns: boolean
+      }
+      confirm_meeting_attendance: {
+        Args: { p_meeting: string; p_proof_type: string; p_user: string }
+        Returns: boolean
+      }
       update_user_club: {
         Args: {
           p_club: string
-          p_description: string
+          p_description: string | null
           p_name: string
           p_private: boolean
           p_version: number
+          p_season_id?: string | null
         }
         Returns: number
       }

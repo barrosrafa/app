@@ -70,9 +70,10 @@ export function MobileNav({ links, signedIn = false }: MobileNavProps) {
 
       <div
         id="mobile-nav-panel"
+        hidden={!open}
         className={`nav-mobile-panel ${open ? 'open' : ''}`}
-        role="dialog"
-        aria-modal="true"
+        role={open ? 'dialog' : undefined}
+        aria-modal={open ? true : undefined}
         aria-label="Menu móvel"
       >
         <nav className="nav-mobile-links" aria-label="Navegação móvel principal">

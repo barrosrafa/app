@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getClubPage } from '@/features/clubs/queries';
 import { ClubMembershipActions } from '@/components/clubs/club-membership-actions';
 import { ClubManagement } from '@/components/clubs/club-management';
 import { createServerSupabase } from '@/lib/supabase/clients';
 
-export const metadata: Metadata = { title: 'Clube de leitura', robots: { index: false, follow: false } };
+export const metadata: Metadata = {
+  title: 'Clube de leitura',
+  robots: { index: false, follow: false },
+};
 
 export default async function ClubPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -13,6 +17,133 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
   if (!data.club) notFound();
   const club = data.club;
   const isOwner = data.userId === club.owner_id;
-  const adminData = isOwner ? await (async () => { const client = await createServerSupabase(); const [{ data: members }, { data: invitations }] = await Promise.all([client.from('user_club_members').select('user_id,role').eq('club_id', club.id).order('joined_at'), client.from('user_club_invitations').select('id,invited_user_id,expires_at').eq('club_id', club.id).is('accepted_at', null).is('revoked_at', null).order('created_at', { ascending: false })]); return { members: members ?? [], invitations: invitations ?? [] }; })() : null;
-  return <section className="container"><header className="page-intro"><span className="eyebrow">{club.is_private ? 'Clube privado' : 'Clube público'}</span><h1>{club.name}</h1>{club.description && <p>{club.description}</p>}</header><div className="member-grid"><main className="member-card"><div className="section-head"><div><span className="eyebrow">Comunidade</span><h2>{data.totalMembers} {data.totalMembers === 1 ? 'leitor' : 'leitores'}</h2></div><ClubMembershipActions clubId={club.id} isMember={data.isMember} isOwner={isOwner} isPrivate={club.is_private} /></div><p>O painel de leitura do clube aparecerá aqui quando um livro e uma temporada forem definidos pelo responsável.</p></main><aside className="chapter-aside"><h2>Acesso</h2><p>{isOwner ? 'Você é o responsável por este clube.' : data.isMember ? 'Você participa deste clube.' : club.is_private ? 'Este clube aceita leitores por convite.' : 'Entre para acompanhar a leitura.'}</p></aside></div>{adminData && <section className="section"><ClubManagement club={{ id: club.id, slug: club.slug, version: club.version, name: club.name, description: club.description, is_private: club.is_private }} members={adminData.members} invitations={adminData.invitations} /></section>}</section>;
+
+  const client = await createServerSupabase();
+
+  const [currentSeasonData, adminData] = await Promise.all([
+    club.current_season_id
+      ? (async () => {
+          const { data: season } = await client
+            .from('seasons')
+            .select('id,title,slug,book_id,cover_url')
+            .eq('id', club.current_season_id)
+            .maybeSingle();
+          if (!season) return null;
+          const { data: book } = await client
+            .from('books')
+            .select('id,title,slug,cover_url')
+            .eq('id', season.book_id)
+            .maybeSingle();
+          return { season, book };
+        })()
+      : Promise.resolve(null),
+    isOwner
+      ? (async () => {
+          const [{ data: members }, { data: invitations }, { data: seasons }] = await Promise.all([
+            client
+              .from('user_club_members')
+              .select('user_id,role')
+              .eq('club_id', club.id)
+              .order('joined_at'),
+            client
+              .from('user_club_invitations')
+              .select('id,invited_user_id,expires_at')
+              .eq('club_id', club.id)
+              .is('accepted_at', null)
+              .is('revoked_at', null)
+              .order('created_at', { ascending: false }),
+            client
+              .from('seasons')
+              .select('id,title,slug')
+              .in('status', ['active', 'finished'])
+              .order('starts_at', { ascending: false }),
+          ]);
+          return {
+            members: members ?? [],
+            invitations: invitations ?? [],
+            seasons: seasons ?? [],
+          };
+        })()
+      : Promise.resolve(null),
+  ]);
+
+  return (
+    <section className="container">
+      <header className="page-intro">
+        <span className="eyebrow">{club.is_private ? 'Clube privado' : 'Clube público'}</span>
+        <h1>{club.name}</h1>
+        {club.description && <p>{club.description}</p>}
+      </header>
+
+      <div className="member-grid">
+        <section aria-labelledby="club-community-heading" className="member-card">
+          <div className="section-head">
+            <div>
+              <span className="eyebrow">Comunidade</span>
+              <h2 id="club-community-heading">
+                {data.totalMembers} {data.totalMembers === 1 ? 'leitor' : 'leitores'}
+              </h2>
+            </div>
+            <ClubMembershipActions
+              clubId={club.id}
+              isMember={data.isMember}
+              isOwner={isOwner}
+              isPrivate={club.is_private}
+            />
+          </div>
+
+          {currentSeasonData?.season ? (
+            <div style={{ marginTop: '16px', padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-md)' }}>
+              <span className="eyebrow">Leitura em andamento</span>
+              <h3 style={{ marginTop: '4px', marginBottom: '8px' }}>
+                {currentSeasonData.book?.title ?? currentSeasonData.season.title}
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: '16px' }}>
+                Ciclo: {currentSeasonData.season.title}
+              </p>
+              <Link className="button button-small" href={`/temporadas/${currentSeasonData.season.slug}`}>
+                Acompanhar capítulos do ciclo →
+              </Link>
+            </div>
+          ) : (
+            <p>
+              O painel de leitura do clube aparecerá aqui quando um ciclo e temporada forem definidos pelo responsável.
+            </p>
+          )}
+        </section>
+
+        <aside className="chapter-aside">
+          <h2>Acesso</h2>
+          <p>
+            {isOwner
+              ? 'Você é o responsável por este clube.'
+              : data.isMember
+                ? 'Você participa deste clube.'
+                : club.is_private
+                  ? 'Este clube aceita leitores por convite.'
+                  : 'Entre para acompanhar a leitura.'}
+          </p>
+        </aside>
+      </div>
+
+      {adminData && (
+        <section className="section">
+          <ClubManagement
+            club={{
+              id: club.id,
+              slug: club.slug,
+              version: club.version,
+              name: club.name,
+              description: club.description,
+              is_private: club.is_private,
+              current_season_id: club.current_season_id,
+            }}
+            members={adminData.members}
+            invitations={adminData.invitations}
+            seasons={adminData.seasons}
+          />
+        </section>
+      )}
+    </section>
+  );
 }

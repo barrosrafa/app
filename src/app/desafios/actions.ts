@@ -20,7 +20,7 @@ export async function joinChallenge(challengeId: string): Promise<ChallengeActio
   if (challengeError || !challenge) return { ok: false, message: 'Este desafio não está disponível.' };
 
   const { error } = await client.from('user_challenges').upsert(
-    { user_id: userId, challenge_id: parsed.data, progress: 0, completed_at: null },
+    { user_id: userId, challenge_id: parsed.data },
     { onConflict: 'user_id,challenge_id', ignoreDuplicates: true },
   );
   if (error) {
