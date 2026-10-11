@@ -50,7 +50,7 @@ export function MeetingRsvp({ meetingId, initialAttending, signedIn = true, disa
       </p>
 
       {signedIn ? (
-        <div role="group" aria-label="Resposta para o encontro" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '12px' }}>
+        <div role="group" aria-label="Resposta para o encontro" className="meeting-rsvp-actions">
           <button
             className="button button-small"
             type="button"

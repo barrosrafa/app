@@ -124,6 +124,30 @@ tests/
 - queries selecionam colunas explícitas e usam limites estáveis;
 - mutações são protegidas simultaneamente por validação server-side e RLS.
 
+### Design System e Interface (Nimble)
+
+O frontend adota o design system do **Nimble (gitnimble.com)** com arquitetura estritamente **Mobile First**, tipografia **Inter**, suporte nativo e instantâneo aos temas **Light (padrão)** e **Dark**, alternador de tema acessível (`ThemeSwitch`) com zero FOUC, e componentes de alta precisão visual:
+
+- **Tokens e Bitematismo**: Cores de marca (`--brand: #005bff`), superfícies progressivas (`--surface-1..3`), textos de alta legibilidade (`--text-primary..tertiary`) e retrocompatibilidade com tokens legados (`--color-*`). Script inline no `<head>` previne qualquer flash de conteúdo não estilizado (FOUC).
+- **Mobile First Rigoroso**: Todo o layout foi reconstruído a partir do viewport de **375px**, expandindo com `@media (min-width: ...)` para tablet (640px/768px) e desktop (860px/1024px+). Touch targets possuem $\ge 48\text{px}$ de altura e CTAs ocupam largura total no mobile (`.btn-block`).
+- **Navegação Adaptativa**: Menu mobile em drawer suspenso (`MobileNav`) com backdrop escurecido, links acessíveis, animação fluida e suporte a fechamento por tecla `Escape` ou clique fora.
+- **Componentes Padronizados**:
+  - Botões estilo pill (`.btn`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-block`, `.btn-lg`, `.btn-sm`);
+  - Moldura de janela macOS (`.mac-window-frame`) com semáforo Apple, toolbar e indicador live;
+  - Feature Grid em 3 colunas (`.feature-grid`) com divisores de 1px usando `--separator`;
+  - Card de adesão/preço de alta conversão (`.price-card`);
+  - Cards de livros verticais com aspecto 2:2.9 e elevação suave (`.book-card`);
+  - Cards interativos de enquetes e votações com barras de porcentagem (`.poll-card`);
+  - Grids de métricas para progresso, XP e badges (`.metric-grid`, `.metric-card`);
+  - Lista de notificações com dots de status (`.notification-list`);
+  - Fachada leve para vídeos do YouTube (`.video-facade`) com poster em alta resolução e carregamento sob demanda;
+  - Pergunta semanal do anfitrião (`.host-prompt-card`) com feedback otimista e contadores;
+  - Estados vazios ilustrados (`EmptyState`) e botões com status de envio (`SubmitButton`).
+- **Resolução de Duplicação Editorial**: A rota `/temporadas/[slug]` (ex: `/temporadas/t1-verity`) elimina a redundância visual entre capítulos e marcos de leitura (milestones) que compartilham o mesmo número, suprimindo cards repetidos, higienizando prefixos (`"Capítulo X — "`) e corrigindo breadcrumbs duplicados.
+
+A especificação detalhada de cada token, componente e classe CSS está disponível no guia canônico:
+👉 [`docs/design-system.md`](./docs/design-system.md)
+
 ## Rotas
 
 | Rota | Acesso | Responsabilidade |
@@ -244,8 +268,8 @@ PLAYWRIGHT_BASE_URL=https://diyspur.vercel.app npm run test:e2e
 A validação final desta versão incluiu:
 
 - lint e TypeScript sem erros;
-- 13 testes unitários aprovados;
-- 6 testes E2E públicos aprovados;
+- 17 testes unitários aprovados (Vitest);
+- 6 testes E2E públicos aprovados (Playwright);
 - build de produção aprovado;
 - smoke de rotas, robots e sitemap;
 - larguras de viewport de 375, 768, 1024 e 1440 px sem overflow horizontal;

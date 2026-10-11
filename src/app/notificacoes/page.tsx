@@ -25,14 +25,14 @@ export default async function NotificationsPage() {
         <div className="member-card" role={error ? 'alert' : undefined}>
           <h2>Entre para ver suas notificações</h2>
           <p>Este espaço é pessoal. Faça login para consultar apenas as atualizações da sua conta.</p>
-          <div style={{ marginTop: 20 }}>
-            <Link className="button button-dark button-small" href="/entrar?redirect=%2Fnotificacoes">
+          <div className="empty-actions">
+            <Link className="button button-small" href="/entrar?redirect=%2Fnotificacoes">
               Entrar na comunidade
             </Link>
           </div>
         </div>
       ) : (
-        <section aria-labelledby="notifications-heading" className="section" style={{ paddingTop: 10 }}>
+        <section aria-labelledby="notifications-heading" className="section">
           <ClubInvitations invitations={invitations} />
           <div className="section-head">
             <div>

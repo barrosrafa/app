@@ -4,10 +4,221 @@ import { BookCard } from '@/components/book-card';
 
 export default async function HomePage() {
   const [books, meetings] = await Promise.all([getBooks(), getMeetings()]);
-  return <>
-    <section className="hero"><div className="hero-inner"><div className="hero-copy"><span className="eyebrow">Leitura com mais companhia</span><h1>Tem histórias que ficam melhores <em>juntas.</em></h1><p>Um clube para descobrir livros, dividir impressões e encontrar gente que sente cada capítulo de um jeito só dela.</p><div className="hero-actions"><Link className="button" href="/livros">Descobrir leituras <span aria-hidden="true">↗</span></Link><Link className="button button-dark" href="/comunidade">Conhecer a comunidade</Link></div><p className="hero-note">Um capítulo de cada vez. No seu ritmo, do seu jeito.</p></div><div className="hero-art" aria-label="Uma capa de livro ilustrada em meio a formas geométricas"><div className="orbit"/><span className="hero-dot"/><div className="book-stack"><div className="book-cover"><span className="book-cover-kicker">uma história compartilhada</span><span className="book-cover-title">Entre<br/>páginas<br/>e encontros</span><span className="book-cover-author">DIyspur · CLUBE DE LEITURA</span></div></div><div className="floating-chip chip-a"><strong>um clube</strong> feito de leitores</div><div className="floating-chip chip-b">Leia. <strong>Converse.</strong> Descubra.</div></div></div></section>
-    <section className="section container"><div className="section-head"><div><span className="eyebrow">A biblioteca</span><h2>Histórias para encontrar</h2><p>Um bom livro abre conversa — e aqui a conversa continua.</p></div><Link className="text-link" href="/livros">Ver todos os livros <span aria-hidden="true">→</span></Link></div>{books.length ? (books.length === 1 ? <div className="featured-book"><BookCard book={books[0]} /></div> : <div className="book-grid">{books.slice(0,4).map((book) => <BookCard key={book.id} book={book}/>)}</div>) : <div className="empty-state"><div className="empty-state-mark" aria-hidden="true">✳</div><h3>Novas histórias estão a caminho</h3><p>Estamos preparando a próxima seleção do clube. Enquanto isso, venha conhecer os leitores e as conversas que já estão acontecendo.</p><div className="empty-actions"><Link className="button button-dark button-small" href="/comunidade">Explorar a comunidade</Link></div></div>}</section>
-    <section className="section container"><div className="section-head"><div><span className="eyebrow">Perto de acontecer</span><h2>Próximos encontros</h2><p>Conversas ao vivo sobre livros, ideias e tudo o que ficou nas entrelinhas.</p></div><Link className="text-link" href="/calendario">Abrir calendário →</Link></div>{meetings.length ? <div className="meeting-list">{meetings.slice(0,2).map((meeting) => <Link className="meeting-row" key={meeting.id} href="/calendario"><div><h3>{meeting.title}</h3><p>{new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date(meeting.scheduled_at))} · horário de Brasília</p></div><span className="status-pill">{meeting.status === 'live' ? 'AO VIVO' : 'Encontro'}</span></Link>)}</div> : <div className="notice">A agenda do próximo ciclo será anunciada em breve. <Link className="text-link" href="/calendario">Acompanhe por aqui →</Link></div>}</section>
-    <section className="section container"><div className="feature-panel"><div className="feature-cover" aria-hidden="true"><span className="cover-placeholder">Cada leitura<br/>abre uma porta.</span></div><div><span className="eyebrow">Mais que virar páginas</span><h3>Uma história é só o começo.</h3><p>Leia no seu tempo. Traga suas perguntas. Descubra como outras pessoas viveram a mesma história — e faça parte da próxima conversa.</p><div className="feature-meta">Leitura compartilhada, sem pressa e sem respostas certas.</div><Link className="button button-small" href="/cadastro">Encontrar meu lugar <span aria-hidden="true">↗</span></Link></div></div></section>
-  </>;
+
+  const featuredBook = books[0];
+
+  return (
+    <>
+      {/* Hero Section — Nimble Centered Layout (Mobile First) */}
+      <section className="hero">
+        <div className="container hero-copy">
+          <div className="hero-badge">
+            <span className="badge-dot" aria-hidden="true" />
+            Clube de Leitura Coletivo
+          </div>
+          <h1>
+            Histórias ganham vida quando lidas <em>juntas.</em>
+          </h1>
+          <p className="hero-lede">
+            O DIYSPUR reúne leitores para mergulhar em livros capítulo a capítulo, trocar ideias ao vivo e descobrir novas perspectivas sem pressa.
+          </p>
+          <div className="hero-cta">
+            <Link className="btn btn-primary btn-lg" href="/livros">
+              Descobrir leituras <span aria-hidden="true">↗</span>
+            </Link>
+            <Link className="btn btn-secondary btn-lg" href="/comunidade">
+              Conhecer a comunidade
+            </Link>
+          </div>
+          <p className="hero-micro">
+            Aberto a todos os leitores · Sem mensalidade obrigatória · 100% colaborativo
+          </p>
+
+          {/* App Preview Window Mockup */}
+          <div className="hero-mockup">
+            <div className="mac-window-frame">
+              <div className="mac-window-toolbar">
+                <div className="mac-lights" aria-hidden="true">
+                  <span className="light red" />
+                  <span className="light amber" />
+                  <span className="light green" />
+                </div>
+                <div className="mac-window-title">
+                  <span>📖</span>
+                  <span>DIYSPUR Reader · Leitura em Andamento</span>
+                </div>
+                <div className="mac-live-pill">
+                  <span className="mac-live-dot" />
+                  14 leitores online
+                </div>
+              </div>
+
+              <div className="mac-window-body">
+                <div className="mockup-pane-left">
+                  <div className="mockup-book-badge">Temporada Atual</div>
+                  <div className="mockup-book-title">
+                    {featuredBook?.title ?? 'Entre Páginas e Encontros'}
+                  </div>
+                  <div className="mockup-chapter-row active">
+                    <span>Capítulo 3 · Ponto de Virada</span>
+                    <strong className="mockup-status-active">Em leitura</strong>
+                  </div>
+                  <div className="mockup-chapter-row">
+                    <span>Capítulo 4 · O Desfecho</span>
+                    <span className="mockup-status-muted">Próx. semana</span>
+                  </div>
+                </div>
+
+                <div className="mockup-pane-right">
+                  <div className="mockup-quote-box">
+                    <p className="mockup-quote-text">
+                      “A verdadeira viagem de descobrimento não consiste em procurar novas paisagens, mas em ter novos olhos.”
+                    </p>
+                    <span className="mockup-quote-author">
+                      — Destaque do clube no Capítulo 2
+                    </span>
+                  </div>
+                  <div className="detail-pills">
+                    <span className="status-pill">48 anotações</span>
+                    <span className="status-pill neutral">Encontro sábado 16h</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Grid — Nimble 3-Column Component (1-col on Mobile) */}
+      <div className="container">
+        <div className="feature-grid">
+          <div className="cell">
+            <span className="cell-icon" aria-hidden="true">📖</span>
+            <h3 className="cell-title">Leituras por Capítulo</h3>
+            <p className="cell-body">
+              Acompanhe o ritmo do clube semana a semana. Ninguém toma spoiler e todo mundo compartilha reflexões no mesmo compasso.
+            </p>
+          </div>
+          <div className="cell">
+            <span className="cell-icon" aria-hidden="true">🎙️</span>
+            <h3 className="cell-title">Encontros ao Vivo</h3>
+            <p className="cell-body">
+              Conversas virtuais periódicas para debater teorias, passagens marcantes e desfechos com quem viveu a história junto.
+            </p>
+          </div>
+          <div className="cell">
+            <span className="cell-icon" aria-hidden="true">💬</span>
+            <h3 className="cell-title">Diário & Comunidade</h3>
+            <p className="cell-body">
+              Guarde suas citações prediletas, anote impressões de cada leitura e participe das votações dos próximos livros.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Catalog Section */}
+      <section className="section container">
+        <div className="section-head">
+          <div>
+            <span className="eyebrow">Biblioteca</span>
+            <h2>Histórias para encontrar</h2>
+            <p>Obras selecionadas para debater, se emocionar e dividir perspectivas.</p>
+          </div>
+          <Link className="text-link" href="/livros">
+            Ver catálogo completo <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
+        {books.length ? (
+          <div className="book-grid">
+            {books.slice(0, 4).map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-state-mark" aria-hidden="true">✳</div>
+            <h3>Novas histórias estão a caminho</h3>
+            <p>
+              Estamos preparando a próxima seleção do clube. Enquanto isso, venha conhecer os leitores e as conversas em andamento.
+            </p>
+            <div className="empty-actions">
+              <Link className="btn btn-secondary btn-sm" href="/comunidade">
+                Explorar a comunidade
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Meetings Section */}
+      <section className="section container">
+        <div className="section-head">
+          <div>
+            <span className="eyebrow">Agenda</span>
+            <h2>Próximos encontros</h2>
+            <p>Conversas ao vivo sobre livros, ideias e tudo o que ficou nas entrelinhas.</p>
+          </div>
+          <Link className="text-link" href="/calendario">
+            Abrir calendário completo <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
+        {meetings.length ? (
+          <div className="meeting-list">
+            {meetings.slice(0, 3).map((meeting) => (
+              <Link className="meeting-row" key={meeting.id} href="/calendario">
+                <div>
+                  <h3>{meeting.title}</h3>
+                  <p>
+                    {new Intl.DateTimeFormat('pt-BR', {
+                      dateStyle: 'full',
+                      timeStyle: 'short',
+                      timeZone: 'America/Sao_Paulo',
+                    }).format(new Date(meeting.scheduled_at))}{' '}
+                    · horário de Brasília
+                  </p>
+                </div>
+                <span className="status-pill">
+                  {meeting.status === 'live' ? 'AO VIVO' : 'Encontro marcado'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="notice">
+            A agenda do próximo ciclo será anunciada em breve.{' '}
+            <Link className="text-link" href="/calendario">
+              Acompanhe por aqui →
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* Membership / Price Card Section */}
+      <section className="section container">
+        <div className="price-card">
+          <div className="price-head">
+            <span className="price-amount">100% Livre</span>
+            <span className="price-term">· gratuito</span>
+          </div>
+          <p className="price-note">
+            Sem mensalidades, sem paywalls. Um espaço aberto e acolhedor feito por leitores para leitores.
+          </p>
+          <div className="price-actions">
+            <Link className="btn btn-primary btn-lg" href="/cadastro">
+              Criar minha conta gratuita <span aria-hidden="true">↗</span>
+            </Link>
+            <Link className="btn btn-secondary btn-sm" href="/livros">
+              Explorar acervo de livros primeiro
+            </Link>
+          </div>
+          <div className="price-guarantee">
+            <span aria-hidden="true">✓</span>
+            Participe no seu ritmo, quando e onde quiser.
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }

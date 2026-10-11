@@ -1,0 +1,15 @@
+# DIYSPUR — Clube de leitura
+
+> Frontend web do DIYSPUR, um clube de leitura em português do Brasil para descobrir livros, acompanhar temporadas e capítulos, participar de quizzes, conversar sem spoilers, responder enquetes, acompanhar encontros e organizar o próprio ritmo de leitura.
+
+## Páginas principais
+
+- [Home](https://diyspur.vercel.app/): Home editorial, destaques e próximos encontros.
+- [Livros](https://diyspur.vercel.app/livros): Catálogo e busca por título.
+- [Calendário](https://diyspur.vercel.app/calendario): Encontros e eventos.
+- [Comunidade](https://diyspur.vercel.app/comunidade): Feed público e discussões.
+- [Ranking](https://diyspur.vercel.app/ranking): Classificação por XP.
+
+## Stack
+
+Next.js 16, React 19, TypeScript, Supabase SSR, CSS próprio.

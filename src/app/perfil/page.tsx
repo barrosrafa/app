@@ -33,11 +33,11 @@ function statusLabel(status: ReadingHistoryItem['status']): string {
 
 function MetricGrid({ metrics }: { metrics: Array<{ label: string; value: string | number }> }) {
   return (
-    <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(112px,1fr))', gap: 10, marginTop: 18 }}>
+    <dl className="metric-grid">
       {metrics.map((metric) => (
-        <div className="notice" key={metric.label}>
+        <div className="metric-card" key={metric.label}>
           <dt className="field-hint">{metric.label}</dt>
-          <dd style={{ margin: '4px 0 0', font: '400 25px/1.1 var(--font-serif)' }}>{metric.value}</dd>
+          <dd className="metric-value">{metric.value}</dd>
         </div>
       ))}
     </dl>
@@ -46,8 +46,8 @@ function MetricGrid({ metrics }: { metrics: Array<{ label: string; value: string
 
 function RecentReading({ items }: { items: ReadingHistoryItem[] }) {
   return (
-    <section className="section" style={{ paddingBlock: 28 }} aria-labelledby="recent-reading-title">
-      <div className="section-head" style={{ marginBottom: 16 }}>
+    <section className="section" aria-labelledby="recent-reading-title">
+      <div className="section-head">
         <div>
           <span className="eyebrow">Atividade</span>
           <h2 id="recent-reading-title">Sua leitura recente</h2>
@@ -74,8 +74,8 @@ function RecentReading({ items }: { items: ReadingHistoryItem[] }) {
 
 function AchievementList({ achievements }: { achievements: Achievement[] }) {
   return (
-    <section className="section" style={{ paddingBlock: 28 }} aria-labelledby="achievements-title">
-      <div className="section-head" style={{ marginBottom: 16 }}>
+    <section className="section" aria-labelledby="achievements-title">
+      <div className="section-head">
         <div>
           <span className="eyebrow">Conquistas</span>
           <h2 id="achievements-title">O que você desbloqueou</h2>
@@ -121,19 +121,19 @@ function OverviewContent({ data }: { data: ProfileOverviewData }) {
       {data.profile?.level && <p>Nível: {data.profile.level}</p>}
 
       {!hasActivity && (
-        <div className="empty-state" style={{ marginTop: 24 }}>
+        <div className="empty-state">
           <div className="empty-state-mark" aria-hidden="true">⌁</div>
           <h3>Seu histórico começa com a próxima página</h3>
           <p>Ainda não há atividade de leitura disponível para exibir aqui.</p>
           <div className="empty-actions">
-            <Link className="button button-dark button-small" href="/livros">Escolher uma leitura</Link>
+            <Link className="button button-small" href="/livros">Escolher uma leitura</Link>
           </div>
         </div>
       )}
 
       {overviewMetrics.length > 0 && (
-        <section className="section" style={{ paddingBlock: 28 }} aria-labelledby="overview-title">
-          <div className="section-head" style={{ marginBottom: 0 }}>
+        <section className="section" aria-labelledby="overview-title">
+          <div className="section-head">
             <div>
               <span className="eyebrow">Visão geral</span>
               <h2 id="overview-title">Seu caminho de leitura</h2>
@@ -144,8 +144,8 @@ function OverviewContent({ data }: { data: ProfileOverviewData }) {
       )}
 
       {(xp || streak) && (
-        <section className="section" style={{ paddingBlock: 28 }} aria-labelledby="momentum-title">
-          <div className="section-head" style={{ marginBottom: 0 }}>
+        <section className="section" aria-labelledby="momentum-title">
+          <div className="section-head">
             <div>
               <span className="eyebrow">Ritmo do clube</span>
               <h2 id="momentum-title">Constância que é sua</h2>
@@ -164,20 +164,38 @@ function OverviewContent({ data }: { data: ProfileOverviewData }) {
             ]}
           />
           {streak?.last_activity_at && (
-            <p className="field-hint" style={{ marginTop: 12 }}>
+            <p className="field-hint">
               Última atividade: <time dateTime={streak.last_activity_at}>{formatDate(streak.last_activity_at) ?? streak.last_activity_at}</time>
             </p>
           )}
         </section>
       )}
 
-      {quizAverage && quizAverage.attempts_total > 0 && <section className="section" style={{ paddingBlock: 28 }} aria-labelledby="quiz-momentum-title"><div className="section-head" style={{ marginBottom: 0 }}><div><span className="eyebrow">Quiz</span><h2 id="quiz-momentum-title">Você está guardando a leitura</h2></div></div><MetricGrid metrics={[{ label: 'Tentativas', value: quizAverage.attempts_total }, { label: 'Média', value: `${Math.round(quizAverage.average_percent)}%` }, { label: 'Melhor resultado', value: `${Math.round(quizAverage.best_percent)}%` }]} /></section>}
+      {quizAverage && quizAverage.attempts_total > 0 && (
+        <section className="section" aria-labelledby="quiz-momentum-title">
+          <div className="section-head">
+            <div>
+              <span className="eyebrow">Quiz</span>
+              <h2 id="quiz-momentum-title">Você está guardando a leitura</h2>
+            </div>
+          </div>
+          <MetricGrid
+            metrics={[
+              { label: 'Tentativas', value: quizAverage.attempts_total },
+              { label: 'Média', value: `${Math.round(quizAverage.average_percent)}%` },
+              { label: 'Melhor resultado', value: `${Math.round(quizAverage.best_percent)}%` },
+            ]}
+          />
+        </section>
+      )}
 
       {recentHistory.length > 0 && <RecentReading items={recentHistory} />}
       {achievements.length > 0 && <AchievementList achievements={achievements} />}
 
-      <div className="notice" style={{ marginTop: 22 }}>Seus dados pessoais e seu progresso são protegidos pelas políticas de acesso do clube.</div>
-      <div style={{ marginTop: 20 }}><Link className="button button-dark button-small" href="/livros">Escolher uma leitura</Link></div>
+      <div className="notice">Seus dados pessoais e seu progresso são protegidos pelas políticas de acesso do clube.</div>
+      <div className="hero-actions">
+        <Link className="button button-small" href="/livros">Escolher uma leitura</Link>
+      </div>
     </section>
   );
 }

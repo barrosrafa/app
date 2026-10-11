@@ -4,49 +4,99 @@ Guia de implementação de produto, UI e código. Antes de propor alteração, c
 
 ## Identidade de marca e estilo visual
 
-DIYSPUR é um clube de leitura com estética **editorial, acolhedora, escura e contemplativa**. Priorize legibilidade, ritmo de leitura, conteúdo real do backend e espaço em branco. Não transforme a experiência numa dashboard genérica ou num tema claro sem solicitação.
+DIYSPUR é um clube de leitura com estética **moderna, acolhedora, contemplativa e focada na leitura**, seguindo o design system do **Nimble (gitnimble.com)** com suporte nativo aos temas **Light (padrão)** e **Dark**, construído estritamente com abordagem **Mobile First**.
 
 ### Paleta mapeada no código
 
-Valores definidos em `src/styles/tokens.css`:
+Valores definidos em `src/styles/tokens.css` organizados em **primitivo → semântico → componente**:
 
-| Papel | Variável | Hex/valor |
-|---|---|---|
-| Fundo mais escuro | `--p-forest-950` / `--color-bg` | `#0a0f0d` |
-| Superfície de card/nav | `--p-forest-900` / `--color-surface` | `#101815` |
-| Superfície elevada | `--p-forest-850` / `--color-elevated` | `#16201b` |
-| Camada overlay | `--p-forest-800` / `--color-overlay` | `#1c2a24` |
-| Primária sálvia | `--p-sage` / `--color-primary` | `#7fe0a0` |
-| Hover primário | `--p-sage-200` / `--color-primary-hover` | `#9cebb6` |
-| Acento secundário | `--p-teal` | `#6ec9d9` |
-| Acento terciário | `--p-violet` | `#a78bfa` |
-| Texto primário | `--p-paper` / `--color-fg` | `#f1f5f0` |
-| Texto muted | `--p-mist` / `--color-muted` | `#b7c3ba` |
-| Texto sutil | `--color-subtle` | `#94a198` |
-| Texto do botão primário | `--color-on-primary` | `#07110c` |
-| Erro | `--color-danger` | `#ff9b91` |
-| Sucesso | `--color-success` | `#6ee7a7` |
-| Borda | `--p-border` / `--color-border` | `rgb(255 255 255 / 9%)` |
-| Borda forte | `--p-border-strong` / `--color-border-strong` | `rgb(255 255 255 / 16%)` |
+#### Tema Light (padrão)
+| Papel | Variável Nimble | Variável Legada | Valor |
+|---|---|---|---|
+| Marca Primária | `--brand` | `--color-primary` | `#005bff` |
+| Hover Marca | `--brand-hover` | `--color-primary-hover` | `#0049cc` |
+| Ativo Marca | `--brand-active` | — | `#003dad` |
+| Texto sobre Marca | `--brand-text` | `--color-on-primary` | `#ffffff` |
+| Fundo Geral | `--background` | `--color-bg` | `#ffffff` |
+| Fundo Leve | `--background-light` | — | `#fafafa` |
+| Fundo Escuro / Seções | `--background-dark` | — | `#f5f6f8` |
+| Superfície 1 (Cards) | `--surface-1` | `--color-surface` | `#ffffff` |
+| Superfície 2 (Elevada) | `--surface-2` | `--color-elevated` | `#fafafa` |
+| Superfície 3 (Overlay) | `--surface-3` | `--color-overlay` | `#f2f3f5` |
+| Texto Principal | `--text-primary` | `--color-fg` | `#282a2f` |
+| Texto Secundário | `--text-secondary` | `--color-muted` | `#5a5e66` |
+| Texto Terciário / Muted | `--text-tertiary` | `--color-subtle` | `#8a8d94` |
+| Divisores | `--separator` | — | `rgba(0, 0, 0, 0.08)` |
+| Bordas | `--border` | `--color-border` | `rgba(0, 0, 0, 0.12)` |
+| Bordas Fortes | `--border-strong` | `--color-border-strong` | `rgba(0, 0, 0, 0.20)` |
+| Sucesso / Positivo | `--positive` / `--positive-text` | `--color-success` | `#009e66` / `#087a52` |
+| Erro / Negativo | `--negative` / `--negative-text` | `--color-danger` | `#d84848` / `#c13f3f` |
+| Modificado / Acento | `--modified` | `--color-accent` | `#005bff` |
+| Não Rastreado / Terciário | `--untracked` | — | `#8e5ae8` |
 
-Use a ordem de tokens **primitivo → semântico → componente**. Prefira `--color-*`, `--button-*`, `--card-*` e `--input-*` nos consumidores em vez de repetir hex. Cores novas precisam justificar seu papel, ser adicionadas à camada primitiva e receber mapeamento semântico.
+#### Tema Dark
+| Papel | Variável Nimble | Variável Legada | Valor |
+|---|---|---|---|
+| Marca Primária | `--brand` | `--color-primary` | `#005bff` |
+| Hover Marca | `--brand-hover` | `--color-primary-hover` | `#1f6fff` |
+| Ativo Marca | `--brand-active` | — | `#3884ff` |
+| Fundo Geral | `--background` | `--color-bg` | `#0b0d12` |
+| Superfície 1 (Cards) | `--surface-1` | `--color-surface` | `#141820` |
+| Superfície 2 (Elevada) | `--surface-2` | `--color-elevated` | `#191d26` |
+| Superfície 3 (Overlay) | `--surface-3` | `--color-overlay` | `#202530` |
+| Texto Principal | `--text-primary` | `--color-fg` | `#f7f8fb` |
+| Texto Secundário | `--text-secondary` | `--color-muted` | `#b8bdc8` |
+| Texto Terciário / Muted | `--text-tertiary` | `--color-subtle` | `#858c99` |
+| Divisores | `--separator` | — | `rgba(255, 255, 255, 0.10)` |
+| Bordas | `--border` | `--color-border` | `rgba(255, 255, 255, 0.14)` |
+| Bordas Fortes | `--border-strong` | `--color-border-strong` | `rgba(255, 255, 255, 0.24)` |
+| Sucesso / Positivo | `--positive` / `--positive-text` | `--color-success` | `#009e66` / `#5fe0ab` |
+| Erro / Negativo | `--negative` / `--negative-text` | `--color-danger` | `#d84848` / `#ff8d8d` |
+
+Use a ordem de tokens **primitivo → semântico → componente**. Prefira os tokens do Nimble (`--brand`, `--background`, `--surface-1..3`, `--text-primary..tertiary`, `--border`, `--separator`) ou a ponte semântica (`--color-*`). Nunca repita valores hexadecimais soltos nos componentes.
 
 ### Tipografia e escala
 
-- Sans/interface: `Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`.
-- Serif editorial: `"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif`.
-- Escala: `.75rem`, `.875rem`, `1rem`, `1.125rem`, `1.25rem`, `1.5rem`, `1.875rem`, `clamp(2.2rem, 5.5vw, 4.5rem)` (`--text-xs` a `--text-4xl`).
-- Espaços: base `.25rem`; `--space-1..6` `.25/.5/.75/1/1.25/1.5rem`; `--space-8/10/12/16` `2/2.5/3/4rem`.
-- Raios: `8/12/18/26px` e pill `999px`; container máximo `1180px`.
-- Movimento: transições `160ms` e `220ms`; sempre respeitar `prefers-reduced-motion`.
+- **Interface & Títulos**: `"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` (`--font-body`, `--font-display`, `--font-serif`).
+- **Mono**: `ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace` (`--font-mono`).
+- **Escala Modular (Fluid / Mobile First)**:
+  - Display XL: `clamp(2.25rem, 1.6rem + 3.2vw, 3.75rem)` (`--text-display-xl`)
+  - Display LG / H2: `clamp(1.75rem, 1.25rem + 2.2vw, 2.75rem)` (`--text-display-lg`)
+  - Títulos: `1.25rem` (`--text-title`), `1.1rem` (`--text-title-sm`)
+  - Corpo: `1rem` (`--text-body`), `0.875rem` (`--text-body-sm`), Legenda: `0.75rem` (`--text-caption`)
+- **Pesos**: Regular `400`, Medium `500`, Semibold `600`, Display `700`.
+- **Espaços**: base `4px` (`--space-1`), até `128px` (`--space-32`).
+- **Raios**: botão `999px` (`--radius-button`), card `16px` (`--radius-card`), large `24px` (`--radius-large`), pill `999px` (`--radius-pill`).
+- **Sombras**: progressivas `--shadow-xs` a `--shadow-xl`, e `--shadow-brand` com `color-mix`.
+- **Movimento**: transições de `150ms` (`--duration-fast`) e `220ms` (`--duration-base`); sempre respeitar `prefers-reduced-motion`.
 
-### Componentes e comportamento de UI
+### Componentes e comportamento de UI (Mobile First)
 
-Reaproveite o vocabulário CSS semântico em `src/styles/global.css`: `.button`, `.button-small`, `.button-dark`, `.button-quiet`, `.book-card`, `.featured-book`, `.empty-state`, `.field`, `.auth-card`, `.meeting-row`, `.member-card`. Componentes React reutilizáveis ficam em `src/components/`.
+- **Mobile First por Padrão**: Todos os blocos começam projetados para telas móveis (`375px+`), usando `@media (min-width: ...)` para progressão:
+  - Mobile (< 640px): coluna única, CTAs em largura total (`.hero-cta { flex-direction: column; width: 100% }`), touch targets $\ge 48\text{px}$, padding `16px`.
+  - Tablet (≥ 640px / 768px): grids em 2 ou 3 colunas, botões em linha.
+  - Desktop (≥ 860px / 1024px): grids de 3 ou 4 colunas, barra de navegação completa.
+- **Botões Nimble**: `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-lg`, `.btn-sm`, `.btn-block` (estilo pill, touch target $\ge 48\text{px}$).
+- **Navegação & ThemeSwitch**:
+  - Header fixo com `backdrop-filter: blur(16px)` e altura `64px` (`--nav-height`).
+  - Menu mobile: Drawer suspenso (`MobileNav` / `.nav-mobile-panel`) com backdrop e links rápidos.
+  - ThemeSwitch: Alternador pill com polegar deslizante suave, ícones SVG e zero FOUC via script no `<head>`.
+- **Janela de Mockup macOS**: `.mac-window-frame` com semáforo Apple, toolbar e preview da leitura.
+- **Feature Grid**: `.feature-grid` com gaps de 1px usando `--separator` e células `.cell`.
+- **Preços / Adesão**: `.price-card` com visual Nimble, badge de gratuidade e garantias.
+- **Catálogo de Livros**: `.book-card` com proporção de capa `2 / 2.9`, elevação suave e pílulas de tags (`.tag`).
+- **Enquetes e Votações**: `.poll-card`, `.poll-options`, `.poll-bar` e metadados de encerramento em `--surface-1`.
+- **Grids de Métricas**: `.metric-grid` auto-fit com células `.metric-card`, valores em `--text-display-lg` e rótulos discretos.
+- **Notificações**: `.notification-list` com itens interativos e dots de status (`.notification-dot`).
+- **Vídeo Facade**: `.video-facade` 16:9 sob demanda, poster em alta resolução, botão de play com blur e zero tracking inicial.
+- **Pergunta do Anfitrião**: `.host-prompt-card` com 3 alternativas e contadores de votos em tempo real.
+- **Timeline de Temporada & Anti-Duplicação**:
+  - Regra obrigatória em `/temporadas/[slug]`: milestones e capítulos com mesmo número compartilham a mesma linha; suprimir cards de milestones redundantes.
+  - Títulos são higienizados removendo repetições de `"Capítulo X — "`.
+  - Breadcrumbs não repetem o nome da temporada.
+- **Componentes Auxiliares**: `EmptyState` (`src/components/empty-state.tsx`) e `SubmitButton` (`src/components/submit-button.tsx`) com pending state nativo do React.
 
-A home usa uma composição de capa geométrica feita em CSS e uma apresentação em destaque para um único livro. As capas do banco entram no componente `BookCard`. Evite recursos visuais que reduzam contraste, links sem foco, animação sem alternativa ou textos de exemplo apresentados como dado publicado.
-
-Breakpoints existentes: `900px` e `650px`; teste mudanças em **375, 768, 1024 e 1440px**. Mantenha HTML semântico, `<html lang="pt-BR">`, labels, alt text, `aria-label` quando necessário, skip link, foco de teclado e hit targets móveis. Não use HTML `<table>` para layout; para documentos Markdown use tabelas GFM apenas quando forem dados tabulares.
+Breakpoints de teste: **375, 640, 768, 860, 1024 e 1440px**. Mantenha HTML semântico, `<html lang="pt-BR">`, labels, alt text, `aria-label`, skip link, foco de teclado visível (`:focus-visible`) e ausência de rolagem horizontal.
 
 ## Padrões de código e boas práticas
 

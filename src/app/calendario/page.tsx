@@ -43,7 +43,7 @@ export default async function CalendarPage() {
   return <section className="container">
     <header className="page-intro">
       <span className="eyebrow">Ler é o começo</span>
-      <h1>Tem conversa<br/><em style={{ color: 'var(--color-primary)' }}>marcada.</em></h1>
+      <h1>Tem conversa<br/><em>marcada.</em></h1>
       <p>Encontros para dividir impressões, ouvir outros pontos de vista e descobrir novas camadas das histórias.</p>
     </header>
     {upcoming.length ? <section className="meeting-list section" style={{ paddingTop: 10 }} aria-labelledby="upcoming-meetings"><div className="section-head"><div><span className="eyebrow">Agenda</span><h2 id="upcoming-meetings">Próximos encontros</h2></div></div>{upcoming.map(renderMeeting)}</section> : <div className="empty-state">

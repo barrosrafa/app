@@ -80,32 +80,90 @@ export default async function BookDetailPage({ params }: { params: Promise<{ slu
                 ))}
               </dl>
             ) : null}
-            {book.warnings?.length ? <section className="book-warnings" aria-labelledby="content-warnings-title"><h2 id="content-warnings-title">Avisos de conteúdo</h2><ul>{book.warnings.map((warning) => <li key={`${warning.label}-${warning.severity}`}><strong>{warning.label}</strong><span>{warning.severity === 'graphic' ? 'Intenso' : warning.severity === 'moderate' ? 'Moderado' : 'Leve'}{warning.is_community ? ' · sinalizado pela comunidade' : ' · revisão editorial'}</span>{warning.description && <p>{warning.description}</p>}</li>)}</ul></section> : null}
-            {safeExternal ? <a className="button button-small" href={`/api/affiliate/${encodeURIComponent(book.slug)}`} target="_blank" rel="sponsored noopener noreferrer">Encontrar o livro <span aria-hidden="true">↗</span></a> : null}
-            {book.readerLists ? <AddBookToList bookId={book.id} lists={book.readerLists} /> : <p className="field-hint" style={{ marginTop: 12 }}>Entre para guardar este livro em uma lista privada.</p>}
+            {book.warnings?.length ? (
+              <section className="book-warnings" aria-labelledby="content-warnings-title">
+                <h2 id="content-warnings-title">Avisos de conteúdo</h2>
+                <ul>
+                  {book.warnings.map((warning) => (
+                    <li key={`${warning.label}-${warning.severity}`}>
+                      <strong>{warning.label}</strong>
+                      <span>
+                        {warning.severity === 'graphic'
+                          ? 'Intenso'
+                          : warning.severity === 'moderate'
+                            ? 'Moderado'
+                            : 'Leve'}
+                        {warning.is_community
+                          ? ' · sinalizado pela comunidade'
+                          : ' · revisão editorial'}
+                      </span>
+                      {warning.description && <p>{warning.description}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+            {safeExternal ? (
+              <a
+                className="button button-small"
+                href={`/api/affiliate/${encodeURIComponent(book.slug)}`}
+                target="_blank"
+                rel="sponsored noopener noreferrer"
+              >
+                Encontrar o livro <span aria-hidden="true">↗</span>
+              </a>
+            ) : null}
+            {book.readerLists ? (
+              <AddBookToList bookId={book.id} lists={book.readerLists} />
+            ) : (
+              <p className="field-hint">
+                Entre para guardar este livro em uma lista privada.
+              </p>
+            )}
           </div>
         </div>
       </header>
-      <section className="section" style={{ paddingTop: 16 }}>
+      <section className="section">
         <div className="section-head">
-          <div><span className="eyebrow">No seu ritmo</span><h2>Temporadas e capítulos</h2></div>
+          <div>
+            <span className="eyebrow">No seu ritmo</span>
+            <h2>Temporadas e capítulos</h2>
+          </div>
         </div>
         {book.seasons.length ? (
           <div className="season-list">
             {book.seasons.map((season) => (
-              <Link className="season-row" href={`/temporadas/${encodeURIComponent(season.slug)}`} key={season.id}>
+              <Link
+                className="season-row"
+                href={`/temporadas/${encodeURIComponent(season.slug)}`}
+                key={season.id}
+              >
                 <div>
                   <h3>{season.title}</h3>
-                  <p>{season.description ?? `Temporada ${season.number}`} · {season.starts_at ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${season.starts_at}T00:00:00`)) : 'Acompanhe a programação'}</p>
+                  <p>
+                    {season.description ?? `Temporada ${season.number}`} ·{' '}
+                    {season.starts_at
+                      ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(
+                          new Date(`${season.starts_at}T00:00:00`)
+                        )
+                      : 'Acompanhe a programação'}
+                  </p>
                 </div>
                 <span className={`status-pill ${season.status === 'active' ? '' : 'neutral'}`}>
-                  {season.status === 'active' ? 'Em andamento' : season.status === 'finished' ? 'Concluída' : 'Em breve'}
+                  {season.status === 'active'
+                    ? 'Em andamento'
+                    : season.status === 'finished'
+                      ? 'Concluída'
+                      : 'Em breve'}
                 </span>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="empty-state"><h3>Esta leitura ainda não tem temporada aberta</h3><p>Volte em breve para acompanhar capítulos e encontros do clube.</p></div>
+          <div className="empty-state">
+            <h3>Esta leitura ainda não tem temporada aberta</h3>
+            <p>Volte em breve para acompanhar capítulos e encontros do clube.</p>
+          </div>
         )}
       </section>
     </div>

@@ -18,13 +18,16 @@ Estas instruções valem para qualquer agente que opere neste repositório. Obje
 4. Preserve o comportamento atual e registre qualquer desvio deliberado. Se faltar contrato de banco, faça leitura do schema/migrations/functions do backend antes de implementar; não invente tabela, enum, coluna ou RPC.
 5. Evite adicionar dependências quando API de plataforma/CSS já resolve. Se precisar de dependência, compare manutenção, impacto de bundle, segurança e peer requirements; atualize lockfile e rode audit.
 
-## Preservação do design system
+## Preservação do design system (Nimble Light & Dark, Mobile First)
 
-- Leia [`CLAUDE.md`](./CLAUDE.md); use os tokens existentes em `src/styles/tokens.css` e os estilos/components de `src/styles/global.css`/`src/components/`.
-- Preserve o tema dark-editorial e os papéis sémanticos. Não espalhe novos hex, fontes, breakpoints ou valores repetidos sem mapear ao token apropriado.
-- Breakpoints atuais: `900px` e `650px`; verifique 375, 768, 1024 e 1440px quando afetar layout.
-- Preserve português brasileiro, conteúdo verdadeiro do Supabase, empty states úteis, affordance de foco e movimento reduzido.
-- Não remova labels, landmarks, skip link, alt ou `focus-visible`; não use cor sozinha para comunicar estado.
+- Leia [`CLAUDE.md`](./CLAUDE.md) e [`docs/design-system.md`](./docs/design-system.md); use os tokens existentes em `src/styles/tokens.css` e as classes utilitárias de `src/styles/global.css`/`src/components/`.
+- O design system adota o padrão do **Nimble (gitnimble.com)** com suporte a **Light (padrão)** e **Dark**. Não use cores hardcoded nem quebre o contraste nos dois modos.
+- **Zero FOUC**: A preferência de tema é lida sincronicamente via script inline no `<head>` em `src/app/layout.tsx`. Não altere ou remova este script.
+- Desenvolva **Mobile First**: todo componente deve renderizar perfeitamente no viewport de `375px` antes de expandir via `@media (min-width: ...)`. CTAs em smartphones ocupam largura total (`.btn-block`), e hit targets devem ter no mínimo $48\text{px}$.
+- Tipografia oficial é **Inter** (`--font-body`, `--font-display`). Não reintroduza fontes serifadas em títulos sem justificativa formal.
+- Breakpoints de teste: **375, 640, 768, 860, 1024 e 1440px**. Não permita rolagem horizontal no documento (`scrollWidth <= clientWidth`).
+- **Regra anti-duplicação de temporadas**: Na página `/temporadas/[slug]`, nunca renderize cards redundantes de milestones quando o capítulo com o mesmo número já existir na timeline; higienize títulos que repitam `"Capítulo X — "`.
+- Preserve acessibilidade: labels semânticos, skip link, foco visível (`:focus-visible`), roles apropriados (`role="switch"`, `aria-checked`), e suporte a `prefers-reduced-motion`.
 
 ## TypeScript, React e lint
 
@@ -78,3 +81,13 @@ npm audit
 ## Limites funcionais vigentes
 
 Não declare recursos como “concluídos” sem código e teste: escritor de comentários, marcação de progresso, quizzes, histórico de leitura, notificações, desafio/ranking completo e CRUD admin são áreas ausentes ou scaffolds. Cadastro/login e leituras públicas estão codificados, mas signup/login em sessão real requer teste de staging; Google/GitHub dependem de configuração externa atualmente desabilitada.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

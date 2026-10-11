@@ -20,7 +20,9 @@ const kindLabels: Record<NotificationRow['kind'], string> = {
   poll_open: 'Enquete aberta',
 };
 
-function isPayloadObject(payload: NotificationRow['payload']): payload is { [key: string]: NotificationRow['payload'] | undefined } {
+function isPayloadObject(
+  payload: NotificationRow['payload']
+): payload is { [key: string]: NotificationRow['payload'] | undefined } {
   return typeof payload === 'object' && payload !== null && !Array.isArray(payload);
 }
 
@@ -43,11 +45,10 @@ function ActionFeedback({ state }: { state: NotificationActionState }) {
       role={state.status === 'error' ? 'alert' : 'status'}
       aria-live="polite"
       className="notice"
-      style={{ marginBottom: 18 }}
     >
       <p>{state.message}</p>
       {state.status === 'login' && (
-        <p style={{ marginTop: 9 }}>
+        <p className="field-hint">
           <Link className="text-link" href="/entrar?redirect=%2Fnotificacoes">
             Entrar novamente →
           </Link>
@@ -57,8 +58,17 @@ function ActionFeedback({ state }: { state: NotificationActionState }) {
   );
 }
 
-export function NotificationList({ notifications, error }: { notifications: NotificationRow[]; error: boolean }) {
-  const [state, formAction, isPending] = useActionState(markNotificationRead, initialNotificationActionState);
+export function NotificationList({
+  notifications,
+  error,
+}: {
+  notifications: NotificationRow[];
+  error: boolean;
+}) {
+  const [state, formAction, isPending] = useActionState(
+    markNotificationRead,
+    initialNotificationActionState
+  );
 
   if (error) {
     return (
@@ -73,55 +83,50 @@ export function NotificationList({ notifications, error }: { notifications: Noti
       <ActionFeedback state={state} />
       {notifications.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-mark" aria-hidden="true">◌</div>
+          <div className="empty-state-mark" aria-hidden="true">
+            ◌
+          </div>
           <h2>Por enquanto, tudo tranquilo.</h2>
           <p>Quando houver uma novidade sobre suas leituras ou encontros, ela aparecerá aqui.</p>
           <div className="empty-actions">
-            <Link className="button button-small" href="/livros">Encontrar uma leitura</Link>
+            <Link className="button button-small" href="/livros">
+              Encontrar uma leitura
+            </Link>
           </div>
         </div>
       ) : (
-        <ol aria-label="Suas notificações" style={{ display: 'grid', gap: 12, listStyle: 'none', margin: 0, padding: 0 }}>
+        <ol aria-label="Suas notificações" className="notification-list">
           {notifications.map((notification) => {
             const title = payloadText(notification, 'title') ?? kindLabels[notification.kind];
-            const message = payloadText(notification, 'message') ?? payloadText(notification, 'body');
+            const message =
+              payloadText(notification, 'message') ?? payloadText(notification, 'body');
             const unread = notification.read_at === null;
 
             return (
               <li key={notification.id}>
-                <article
-                  className="member-card"
-                  style={{
-                    borderColor: unread ? 'var(--color-border-strong)' : 'var(--color-border)',
-                    boxShadow: unread ? 'var(--glow-primary)' : 'none',
-                  }}
-                >
-                  <div style={{ alignItems: 'start', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
+                <article className={`notification-card ${unread ? 'is-unread' : ''}`}>
+                  <div className="notification-head">
                     <div>
                       <p className="eyebrow">{kindLabels[notification.kind]}</p>
-                      <h2 style={{ fontSize: 20, marginTop: 6 }}>{title}</h2>
+                      <h2>{title}</h2>
                     </div>
                     <span
+                      className={`notification-badge ${unread ? 'unread' : 'read'}`}
                       aria-label={unread ? 'Não lida' : 'Lida'}
-                      style={{
-                        background: unread ? 'var(--color-primary)' : 'var(--color-border-strong)',
-                        borderRadius: 'var(--radius-pill)',
-                        color: unread ? 'var(--color-on-primary)' : 'var(--color-muted)',
-                        flexShrink: 0,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '5px 9px',
-                      }}
                     >
                       {unread ? 'Nova' : 'Lida'}
                     </span>
                   </div>
-                  {message && <p style={{ marginTop: 9 }}>{message}</p>}
-                  <p className="field-hint" style={{ marginTop: 12 }}>{formatDate(notification.created_at)}</p>
+                  {message && <p>{message}</p>}
+                  <p className="field-hint">{formatDate(notification.created_at)}</p>
                   {unread && (
-                    <form action={formAction} style={{ marginTop: 16 }}>
+                    <form action={formAction}>
                       <input type="hidden" name="notificationId" value={notification.id} />
-                      <button className="button button-dark button-small" type="submit" disabled={isPending}>
+                      <button
+                        className="button button-small"
+                        type="submit"
+                        disabled={isPending}
+                      >
                         {isPending ? 'Atualizando…' : 'Marcar como lida'}
                       </button>
                     </form>
