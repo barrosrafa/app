@@ -158,16 +158,22 @@ A especificação detalhada de cada token, componente e classe CSS está dispon�
 | `/temporadas/[slug]` | Público | Temporada, milestones e capítulos disponíveis/bloqueados. |
 | `/capitulos/[id]` | Público/autenticado | Leitura, vídeo, quiz, progresso, comentários e pergunta do anfitrião. |
 | `/calendario` | Público/autenticado | Encontros, status, RSVP e exportação ICS. |
-| `/comunidade` | Público | Feed de comentários visíveis e contexto editorial. |
+| `/clubes` | Público/autenticado | Descoberta e listagem de clubes de leitura. |
+| `/clubes/novo` | Privado | Criação de novo clube de leitura com idempotência. |
+| `/clubes/[slug]` | Público/autenticado | Ficha do clube, ciclo de leitura ativo, membros e gestão do titular. |
+| `/comunidade` | Público | Feed de comentários visíveis e contexto editorial com tratamento de falhas. |
 | `/votacao` | Público/autenticado | Votação aberta e resultados encerrados. |
-| `/desafios` | Privado | Desafios publicados e inscrição do leitor. |
+| `/desafios` | Privado | Desafios publicados e inscrição segura do leitor. |
+| `/diario` | Privado | Diário de leitura pessoal, notas, minutos lidos e abas de ativos/arquivados. |
 | `/listas` | Privado | Listas privadas do leitor. |
+| `/metas` | Privado | Metas de leitura anuais (livros, páginas e minutos) com cálculo automático de progresso. |
+| `/minha-fila` | Privado | Fila de leitura prioritária ("Up Next") com adição e remoção atômica. |
 | `/perfil` | Privado | Perfil, XP, médias, badges e atividade. |
 | `/historico` | Privado | Progresso e tentativas recentes. |
 | `/ranking` | Privado | Ranking da temporada por XP. |
 | `/notificacoes` | Privado | Notificações do leitor. |
 | `/leituras-compartilhadas` | Privado | Área de leituras compartilhadas disponível no contrato atual. |
-| `/admin` | Privado/admin | Área restrita por autorização server-side. |
+| `/admin` | Privado/admin | Área restrita por autorização server-side (livros, capítulos, moderação, rascunhos). |
 | `/entrar`, `/cadastro` | Público | Autenticação; páginas `noindex`. |
 | `/recuperar-senha`, `/atualizar-senha` | Público autenticado conforme etapa | Recuperação de senha. |
 | `/api/affiliate/[slug]` | Público | Valida livro, registra clique e redireciona. |
@@ -267,13 +273,13 @@ PLAYWRIGHT_BASE_URL=https://diyspur.vercel.app npm run test:e2e
 
 A validação final desta versão incluiu:
 
-- lint e TypeScript sem erros;
-- 17 testes unitários aprovados (Vitest);
+- lint e TypeScript com zero erros (`npm run lint && npm run typecheck`);
+- 21 testes unitários aprovados em 6 suítes (Vitest: `goals-schemas`, `newsletter-schemas`, `meeting-state`, `safe-redirect`, `polls`, `chapter-schemas`);
 - 6 testes E2E públicos aprovados (Playwright);
-- build de produção aprovado;
+- build de produção Turbopack aprovado gerando 32 rotas estáticas e dinâmicas;
 - smoke de rotas, robots e sitemap;
-- larguras de viewport de 375, 768, 1024 e 1440 px sem overflow horizontal;
-- validação manual autenticada dos fluxos de leitura, quiz, progresso, RSVP, listas, desafio, comentários, votação, perfil e admin.
+- larguras de viewport de 375, 640, 768, 860, 1024 e 1440 px sem overflow horizontal e com hit-targets de toque $\ge 48\text{px}$;
+- validação manual autenticada dos fluxos de leitura, quiz com 5 questões, progresso, metas, minha fila, diário com cursor e arquivamento, RSVP, listas, desafio, comentários, votação, perfil e admin.
 
 Ao alterar uma migration ou action, não considere um build verde suficiente: confirme também RLS, constraints, idempotência e isolamento entre usuários.
 
@@ -427,3 +433,55 @@ O frontend usa apenas `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHA
 ### Estado de validação
 
 TypeScript, ESLint, 13 testes unitários e build de produção foram aprovados. As migrations foram aplicadas no projeto Supabase `xjhehhfhhoomblcggjpk` nas versões remotas `20261010165108` e `20261010165112`; o smoke público de produção foi executado em `/`, `/livros`, `/livros/verity`, `/temporadas/t1-verity`, `/capitulos/3a687744-7a0f-4dbf-9bad-f5ad3d920732`, `/listas` e `/admin` em 10/10/2026.
+
+## Release de conformidade de auditoria e novas jornadas de leitura — 2026-10-11
+
+Esta release consolida o fechamento dos gaps de auditoria de produção (itens B01 a B19), a introdução das jornadas de produto da Seção 5.2 e o refinamento de acessibilidade e design system Mobile First (Nimble).
+
+### Novas jornadas de produto
+
+1. **Metas de Leitura Anuais (`/metas`)**:
+   - Criação e atualização de metas do leitor para o ano corrente (livros meta, páginas meta e minutos diários meta).
+   - Acompanhamento de progresso derivado automaticamente do histórico de leituras concluídas e das sessões do diário.
+   - Validação server-side estrita com Zod (`src/features/goals/actions.ts` e `src/features/goals/queries.ts`).
+
+2. **Minha Fila de Leitura (`/minha-fila`)**:
+   - Fila prioritária de leitura ("Up Next") para organizar as próximas obras a serem consumidas.
+   - Ações atômicas de inclusão direta do catálogo e remoção (`RemoveQueueButton`).
+
+3. **Inscrição em Newsletter com Consentimento**:
+   - Formulário de captura de email com checkbox explícito e obrigatório de consentimento nos termos da LGPD (`src/components/newsletter/signup-form.tsx`).
+
+4. **Ciclo de Leitura em Clubes (`/clubes/[slug]`)**:
+   - Gestão de leitura ativa pelo titular no painel `ClubManagement`, permitindo vincular a temporada/livro em andamento (B15).
+   - Card de leitura atual com indicador de progresso e links diretos para a timeline de capítulos.
+
+### Correções e melhorias de engenharia e acessibilidade
+
+- **B08, B09, B10 & B11 (Diário Pessoal):**
+  - **Paginação estável:** Implementado cursor composto em base64url `(entry_date, id)` que elimina saltos ou duplicação de itens com mesma data.
+  - **Validação de mutações:** Verificação de contagem de linhas afetadas nas Server Actions de arquivamento e restauração.
+  - **Acessibilidade & Feedback:** Estado pendente nos botões de ação com feedback para leitores de tela via `role="status"` e `aria-live="polite"`.
+  - **Abas de navegação:** Separação entre leituras "Ativas" e "Arquivadas" com restauração em 1 clique.
+- **B12 & B13 (Acessibilidade WCAG 2.2):**
+  - `MobileNav`: Menu móvel fechado recebe `hidden={!open}` e atributos dinâmicos `aria-modal`/`role="dialog"`, sendo completamente excluído da árvore de foco e de acessibilidade quando inativo.
+  - Alvo de toque do botão de menu `.mobile-nav-toggle` ampliado para $48\times 48\text{px}$, em conformidade com as diretrizes de acessibilidade para dispositivos móveis.
+  - Eliminação de marco `<main>` duplicado na página do clube, mantendo um único ponto de referência principal no documento.
+- **B05 (Segurança de Desafios):**
+  - Payload cliente restrito estritamente a `(user_id, challenge_id)` ao entrar em um desafio, impedindo qualquer manipulação de progresso inicial ou data de conclusão.
+- **B06 & B07 (Administração e Qualidade):**
+  - Validação mandatória de 5 perguntas revisadas antes de permitir a publicação de um quiz (`src/app/admin/actions.ts`).
+  - Suporte explícito ao estado `is_draft` no ciclo de vida e edição de capítulos.
+- **B14 & B16 (Experiência do Usuário e Observabilidade):**
+  - Prévia da home sinalizada explicitamente como demonstração ilustrativa da experiência.
+  - Página da comunidade com tratamento e exibição clara de estados de erro na recuperação do feed.
+- **Capítulo Concluído:**
+  - Botão de ação do leitor atualizado para estado inativo "✓ Capítulo concluído" quando o status registrado já for `read`.
+
+### Estado de validação da release
+
+- **TypeScript (`tsc --noEmit`):** 0 erros.
+- **ESLint (`eslint .`):** 0 avisos ou erros.
+- **Vitest (`vitest run`):** 21 testes aprovados em 6 suítes unitárias (`goals-schemas`, `newsletter-schemas`, `meeting-state`, `safe-redirect`, `polls`, `chapter-schemas`).
+- **Turbopack Build (`next build`):** 32 rotas estáticas e dinâmicas compiladas com sucesso para produção.
+
