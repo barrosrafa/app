@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { NotificationList } from './notification-list';
 import { getNotificationsPageData } from './queries';
+import { ClubInvitations } from '@/components/clubs/club-invitations';
 
 export const metadata: Metadata = {
   title: 'Notificações',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NotificationsPage() {
-  const { userId, notifications, error } = await getNotificationsPageData();
+  const { userId, notifications, invitations, error } = await getNotificationsPageData();
 
   return (
     <section className="container">
@@ -32,6 +33,7 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <section aria-labelledby="notifications-heading" className="section" style={{ paddingTop: 10 }}>
+          <ClubInvitations invitations={invitations} />
           <div className="section-head">
             <div>
               <span className="eyebrow">Atualizações recentes</span>

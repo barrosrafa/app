@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { createServerSupabase } from '@/lib/supabase/clients';
 import { CreateListForm } from '@/components/lists/create-list-form';
+import { ListManagement, RemoveListItemButton } from '@/components/lists/list-management';
 
 export const metadata: Metadata = {
   title: 'Listas de leitura',
@@ -27,6 +28,7 @@ type ReadingList = {
   items_count: number;
   created_at: string;
   updated_at: string;
+  version: number;
 };
 
 type Collaborator = {
@@ -114,7 +116,7 @@ async function loadListsPage(): Promise<ListsPageData> {
   const [ownedResult, collaboratorResult] = await Promise.all([
     client
       .from('reading_lists')
-      .select('id,owner_id,slug,title,description,cover_url,visibility,is_collaborative,theme,tags,items_count,created_at,updated_at')
+      .select('id,owner_id,slug,title,description,cover_url,visibility,is_collaborative,theme,tags,items_count,created_at,updated_at,version')
       .eq('owner_id', userId)
       .order('updated_at', { ascending: false }),
     client
@@ -136,7 +138,7 @@ async function loadListsPage(): Promise<ListsPageData> {
   if (collaboratorIds.length) {
     const sharedResult = await client
       .from('reading_lists')
-      .select('id,owner_id,slug,title,description,cover_url,visibility,is_collaborative,theme,tags,items_count,created_at,updated_at')
+      .select('id,owner_id,slug,title,description,cover_url,visibility,is_collaborative,theme,tags,items_count,created_at,updated_at,version')
       .in('id', collaboratorIds)
       .order('updated_at', { ascending: false });
     if (sharedResult.error) return { ...emptyData('Não foi possível carregar as listas compartilhadas. Tente novamente em instantes.'), userId };
@@ -194,7 +196,7 @@ async function loadListsPage(): Promise<ListsPageData> {
   };
 }
 
-function ListItemRow({ item, books, chapters }: { item: ReadingListItem; books: Map<string, Book>; chapters: Map<string, Chapter> }) {
+function ListItemRow({ item, books, chapters, canEdit }: { item: ReadingListItem; books: Map<string, Book>; chapters: Map<string, Chapter>; canEdit: boolean }) {
   const book = item.book_id ? books.get(item.book_id) : undefined;
   const chapter = item.chapter_id ? chapters.get(item.chapter_id) : undefined;
   const externalUrl = safeExternalUrl(item.external_url);
@@ -214,6 +216,7 @@ function ListItemRow({ item, books, chapters }: { item: ReadingListItem; books: 
         {externalUrl && <p><a className="text-link" href={externalUrl} target="_blank" rel="noopener noreferrer">Abrir referência ↗</a></p>}
         {date && <p><time dateTime={item.created_at}>Adicionado em {date}</time></p>}
       </div>
+      {canEdit && <RemoveListItemButton listId={item.list_id} itemId={item.id} />}
     </li>
   );
 }
@@ -240,13 +243,14 @@ function ListCard({ list, books, chapters }: { list: ListView; books: Map<string
         {updated ? ` · Atualizada em ${updated}` : ''}
       </p>
       {list.tags && list.tags.length > 0 && <div className="detail-pills" aria-label="Temas da lista">{list.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div>}
-      {list.collaboration && <p className="notice" style={{ marginTop: 14 }}>Você tem acesso por colaboração. Esta visualização é somente leitura.</p>}
+      {list.collaboration && !list.collaboration.can_edit && <p className="notice" style={{ marginTop: 14 }}>Você tem acesso por colaboração. Esta visualização é somente leitura.</p>}
+      {(list.isOwned || list.collaboration?.can_edit) && <ListManagement listId={list.id} version={list.version} title={list.title} description={list.description} items={list.items.map((item) => ({ id: item.id, position: item.position }))} />}
       <section aria-labelledby={`${headingId}-items`} style={{ marginTop: 22 }}>
         <div className="section-head" style={{ marginBottom: 12 }}>
           <h3 id={`${headingId}-items`} style={{ font: '500 17px var(--font-serif)' }}>Itens da lista</h3>
           <span className="field-hint">{itemCount} {itemCount === 1 ? 'item' : 'itens'}</span>
         </div>
-        {list.items.length ? <ul className="timeline" style={{ listStyle: 'none', padding: 0, margin: 0 }}>{list.items.map((item) => <ListItemRow key={item.id} item={item} books={books} chapters={chapters} />)}</ul> : <div className="notice">Ainda não há itens de leitura acessíveis nesta lista.</div>}
+        {list.items.length ? <ul className="timeline" style={{ listStyle: 'none', padding: 0, margin: 0 }}>{list.items.map((item) => <ListItemRow key={item.id} item={item} books={books} chapters={chapters} canEdit={list.isOwned || Boolean(list.collaboration?.can_edit)} />)}</ul> : <div className="notice">Ainda não há itens de leitura acessíveis nesta lista.</div>}
       </section>
     </article>
   );

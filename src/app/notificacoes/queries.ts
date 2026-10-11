@@ -11,6 +11,7 @@ export type NotificationRow = Pick<
 export type NotificationsPageData = {
   userId: string | null;
   notifications: NotificationRow[];
+  invitations: { id: string; club_id: string; expires_at: string; created_at: string }[];
   error: boolean;
 };
 
@@ -21,22 +22,23 @@ export async function getNotificationsPageData(): Promise<NotificationsPageData>
     const userId = claimsData?.claims?.sub;
 
     if (claimsError || !userId) {
-      return { userId: null, notifications: [], error: Boolean(claimsError) };
+      return { userId: null, notifications: [], invitations: [], error: Boolean(claimsError) };
     }
 
-    const { data, error } = await client
+    const [{ data, error }, { data: invitations }] = await Promise.all([client
       .from('notifications')
       .select('id,kind,payload,created_at,read_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(50), client.from('user_club_invitations').select('id,club_id,expires_at,created_at').eq('invited_user_id', userId).is('accepted_at', null).is('revoked_at', null).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(20)]);
 
     return {
       userId,
       notifications: (data ?? []) as NotificationRow[],
+      invitations: invitations ?? [],
       error: Boolean(error),
     };
   } catch {
-    return { userId: null, notifications: [], error: true };
+    return { userId: null, notifications: [], invitations: [], error: true };
   }
 }

@@ -36,13 +36,36 @@ export async function addBookToReadingList(input: unknown): Promise<ListActionRe
   if (!parsed.success) return { ok: false, message: 'Livro ou lista inválidos.' };
   const session = await sessionContext();
   if (!session) return { ok: false, message: 'Entre para salvar este livro.', requiresAuth: true };
-  const { data: list, error: listError } = await session.client.from('reading_lists').select('id').eq('id', parsed.data.listId).eq('owner_id', session.userId).maybeSingle();
-  if (listError || !list) return { ok: false, message: 'Você não pode alterar esta lista.' };
-  const { data: existing } = await session.client.from('reading_list_items').select('id').eq('list_id', list.id).eq('book_id', parsed.data.bookId).limit(1);
-  if (existing?.length) return { ok: true, message: 'Este livro já está na lista.' };
-  const { data: last } = await session.client.from('reading_list_items').select('position').eq('list_id', list.id).order('position', { ascending: false }).limit(1).maybeSingle();
-  const { error } = await session.client.from('reading_list_items').insert({ list_id: list.id, book_id: parsed.data.bookId, kind: 'book', added_by: session.userId, position: (last?.position ?? -1) + 1 });
-  if (error) { console.error('List item create failed', error.code); return { ok: false, message: 'Não foi possível adicionar o livro agora.' }; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (session.client as any).rpc('add_book_to_reading_list', { p_list_id: parsed.data.listId, p_book_id: parsed.data.bookId });
+  if (error || !data?.ok) return { ok: false, message: data?.message ?? 'Não foi possível adicionar o livro agora.' };
   revalidatePath('/listas');
-  return { ok: true, message: 'Livro adicionado à lista.' };
+  return { ok: true, message: data.message ?? 'Livro adicionado à lista.' };
+}
+
+const manageListSchema = z.object({ listId: z.string().uuid(), title: z.string().trim().min(1).max(80), description: z.string().trim().max(500).optional() }).strict();
+export async function updateReadingList(input: unknown): Promise<ListActionResult> {
+  const parsed = manageListSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Confira o nome da lista.' };
+  const session = await sessionContext(); if (!session) return { ok: false, message: 'Entre para editar a lista.', requiresAuth: true };
+  const { error } = await session.client.from('reading_lists').update({ title: parsed.data.title, description: parsed.data.description || null, updated_at: new Date().toISOString() }).eq('id', parsed.data.listId).eq('owner_id', session.userId);
+  if (error) return { ok: false, message: 'Não foi possível atualizar a lista.' };
+  revalidatePath('/listas'); return { ok: true, message: 'Lista atualizada.' };
+}
+
+export async function removeBookFromReadingList(input: unknown): Promise<ListActionResult> {
+  const parsed = z.object({ listId: z.string().uuid(), itemId: z.string().uuid() }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Item inválido.' };
+  const session = await sessionContext(); if (!session) return { ok: false, message: 'Entre para editar a lista.', requiresAuth: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (session.client as any).rpc('remove_reading_list_item', { p_list_id: parsed.data.listId, p_item_id: parsed.data.itemId });
+  if (error) return { ok: false, message: error.code === '42501' ? 'Você não pode editar esta lista.' : 'Não foi possível remover o item.' };
+  revalidatePath('/listas'); return { ok: true, message: 'Item removido.' };
+}
+
+export async function reorderReadingList(input: unknown): Promise<ListActionResult> {
+  const parsed = z.object({ listId: z.string().uuid(), version: z.number().int().positive(), itemIds: z.array(z.string().uuid()).max(500) }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Ordem inválida.' };
+  const session = await sessionContext(); if (!session) return { ok: false, message: 'Entre para editar a lista.', requiresAuth: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (session.client as any).rpc('reorder_reading_list', { p_list: parsed.data.listId, p_version: parsed.data.version, p_item_ids: parsed.data.itemIds });
+  if (error) return { ok: false, message: error.code === '40001' ? 'A lista mudou. Atualize e tente novamente.' : 'Não foi possível reorganizar a lista.' };
+  revalidatePath('/listas'); return { ok: true, message: 'Ordem atualizada.' };
 }

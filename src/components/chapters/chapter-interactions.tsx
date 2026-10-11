@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type FormEvent } from 'react';
 import { createChapterComment, deleteChapterComment, editChapterComment, getOwnChapterCommentForEdit, saveChapterProgress } from '@/features/chapters/actions';
+import { ReportButton } from '@/components/moderation/report-button';
 
-type VisibleComment = { id: string; user_id: string; content: string | null; is_spoiler: boolean; is_locked: boolean; created_at: string };
+type VisibleComment = { id: string; user_id: string; content: string | null; is_spoiler: boolean; is_locked: boolean; created_at: string; author?: { display_name: string | null; username: string | null } | null };
 
 export function ChapterInteractions({ chapterId, signedIn, viewerId, progress, comments }: {
   chapterId: string;
@@ -80,10 +81,10 @@ export function ChapterInteractions({ chapterId, signedIn, viewerId, progress, c
       <div className="section-head"><div><span className="eyebrow">Juntos na leitura</span><h2 id="discussion-heading">O que ficou com você?</h2></div></div>
       {comments.length ? <ul className="comment-list">{comments.map((comment) => <li className="comment-card" key={comment.id}>
         {comment.is_locked || comment.content === null ? <p className="spoiler-locked">Este comentário tem spoiler. Marque progresso suficiente no capítulo para revelar o texto.</p> : comment.is_spoiler ? <details><summary className="text-link">Revelar comentário com spoiler</summary><p>{comment.content}</p></details> : <p>{comment.content}</p>}
-        <span className="field-hint">{comment.is_spoiler ? 'Comentário marcado com spoiler' : 'Conversa da comunidade'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(comment.created_at))}</span>
+        <span className="field-hint">{comment.author?.display_name ?? (comment.author?.username ? `@${comment.author.username}` : 'Leitor da comunidade')} · {comment.is_spoiler ? 'Comentário marcado com spoiler' : 'Conversa da comunidade'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(comment.created_at))}</span>
         {signedIn && viewerId === comment.user_id && <div className="comment-actions">
           {editingId === comment.id ? <div className="comment-edit"><label htmlFor={`edit-${comment.id}`}>Editar seu comentário</label><textarea id={`edit-${comment.id}`} value={editText} maxLength={4000} onChange={(event) => setEditText(event.target.value)} /><div className="chapter-progress-actions"><button className="button button-small" type="button" disabled={busy} onClick={() => saveEdit(comment.id)}>Salvar edição</button><button className="button button-quiet button-small" type="button" onClick={() => setEditingId(null)}>Cancelar</button></div></div> : <><button className="button button-quiet button-small" type="button" disabled={busy} onClick={() => beginEdit(comment.id)}>Editar</button><button className="button button-quiet button-small" type="button" disabled={busy} onClick={() => removeComment(comment.id)}>Remover</button></>}
-        </div>}
+        </div>}{signedIn && viewerId !== comment.user_id && <ReportButton contentType="comment" contentId={comment.id} path={`/capitulos/${chapterId}`} />}
       </li>)}</ul> : <div className="empty-state"><h3>A conversa começa com uma leitura</h3><p>Seja a primeira pessoa a compartilhar uma impressão sobre este capítulo.</p></div>}
       {signedIn ? <form className="comment-composer" onSubmit={postComment}>
         <label htmlFor="chapter-comment">Seu comentário</label><textarea id="chapter-comment" name="content" required maxLength={4000} rows={4} placeholder="Compartilhe uma ideia, pergunta ou trecho que marcou você…" />
