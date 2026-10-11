@@ -61,6 +61,15 @@ export async function removeBookFromReadingList(input: unknown): Promise<ListAct
   revalidatePath('/listas'); return { ok: true, message: 'Item removido.' };
 }
 
+export async function restoreBookToReadingList(input: unknown): Promise<ListActionResult> {
+  const parsed = z.object({ listId: z.string().uuid(), itemId: z.string().uuid() }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Item inválido.' };
+  const session = await sessionContext(); if (!session) return { ok: false, message: 'Entre para editar a lista.', requiresAuth: true };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (session.client as any).rpc('restore_reading_list_item', { p_list_id: parsed.data.listId, p_item_id: parsed.data.itemId });
+  if (error) return { ok: false, message: error.code === '23505' ? 'Este livro já está ativo na lista.' : 'Não foi possível restaurar o item.' };
+  revalidatePath('/listas'); return { ok: true, message: 'Item restaurado.' };
+}
+
 export async function reorderReadingList(input: unknown): Promise<ListActionResult> {
   const parsed = z.object({ listId: z.string().uuid(), version: z.number().int().positive(), itemIds: z.array(z.string().uuid()).max(500) }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Ordem inválida.' };
   const session = await sessionContext(); if (!session) return { ok: false, message: 'Entre para editar a lista.', requiresAuth: true };

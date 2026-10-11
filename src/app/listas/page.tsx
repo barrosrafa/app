@@ -159,9 +159,9 @@ async function loadListsPage(): Promise<ListsPageData> {
 
   const itemsResult = await client
     .from('reading_list_items')
-    .select('id,list_id,kind,book_id,chapter_id,external_url,quote_text,note,position,created_at')
+    .select('id,list_id,kind,book_id,chapter_id,external_url,quote_text,note,position,created_at,archived_at')
     .in('list_id', listIds)
-    .order('position', { ascending: true });
+    .is('archived_at', null).order('position', { ascending: true });
   if (itemsResult.error) return { ...emptyData('Suas listas carregaram, mas os itens não puderam ser consultados agora.'), userId };
 
   const items = (itemsResult.data ?? []) as ReadingListItem[];

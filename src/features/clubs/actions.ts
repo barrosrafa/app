@@ -36,7 +36,7 @@ export async function updateClub(input: unknown): Promise<Result> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (session.client as any).rpc('update_user_club', { p_club: parsed.data.clubId, p_version: parsed.data.version, p_name: parsed.data.name, p_description: parsed.data.description, p_private: parsed.data.isPrivate });
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
-  revalidatePath('/clubes'); revalidatePath(`/clubes/${parsed.data.clubId}`); return { ok: true, message: 'Clube atualizado.', data: { version: data } };
+  revalidatePath('/clubes'); revalidatePath(`/clubes/${parsed.data.slug}`); return { ok: true, message: 'Clube atualizado.', data: { version: data } };
 }
 
 const invitationSchema = z.object({ clubId: z.string().uuid(), invitedUserId: z.string().uuid(), expiresAt: z.string().datetime() }).strict();

@@ -52,6 +52,12 @@ export async function updateChapter(input: unknown): Promise<AdminResult> {
   const parsed = chapterSchema.safeParse(input); if (!parsed.success) return { ok: false, message: 'Confira os dados do capítulo.', code: 'validation' };
   const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
   const { id, title, readingRange, summary, youtubeUrl, publishedAt } = parsed.data;
+  if (publishedAt) {
+    if (!youtubeUrl || !/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(youtubeUrl)) return { ok: false, message: 'Adicione um replay válido do YouTube antes de publicar.', code: 'validation' };
+    const { data: questions, error: questionsError } = await session.client.from('quiz_questions').select('options,correct_idx,chapter_reference').eq('chapter_id', id);
+    if (questionsError) return { ok: false, message: 'Não foi possível verificar as perguntas antes da publicação.', code: 'unavailable' };
+    if ((questions ?? []).some((question) => !Array.isArray(question.options) || question.options.length < 2 || typeof question.correct_idx !== 'number' || question.correct_idx < 0 || question.correct_idx >= question.options.length || !question.chapter_reference)) return { ok: false, message: 'Revise as perguntas e a referência de leitura antes de publicar.', code: 'validation' };
+  }
   const { error } = await session.client.from('chapters').update({ title, reading_range: readingRange || null, summary: summary || null, youtube_url: youtubeUrl || null, published_at: publishedAt }).eq('id', id);
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   await audit(session.client, session.userId, 'chapter', id, publishedAt ? 'publish_or_schedule' : 'save_draft', { title, published_at: publishedAt });
@@ -84,4 +90,13 @@ export async function reviewReport(input: unknown): Promise<AdminResult> {
   const { error } = await (session.client as any).rpc('review_content_report', { p_report: parsed.data.id, p_status: parsed.data.status });
   if (error) return { ok: false, ...mapDatabaseError(error.code) };
   revalidatePath('/admin/moderation'); return { ok: true, message: 'Denúncia revisada.' };
+}
+
+export async function hideReportedContent(input: unknown): Promise<AdminResult> {
+  const parsed = z.object({ id: uuid }).safeParse(input); if (!parsed.success) return { ok: false, message: 'Denúncia inválida.', code: 'validation' };
+  const session = await adminContext(); if (!session) return { ok: false, message: 'Acesso restrito à equipe editorial.', code: 'forbidden' };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (session.client as any).rpc('hide_reported_content', { p_report: parsed.data.id });
+  if (error) return { ok: false, ...mapDatabaseError(error.code) };
+  revalidatePath('/admin/moderation'); return { ok: true, message: 'Conteúdo ocultado e denúncia resolvida.' };
 }
