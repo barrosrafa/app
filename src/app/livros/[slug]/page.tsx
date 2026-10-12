@@ -4,14 +4,29 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getBook } from '@/features/catalog/queries';
 import { AddBookToList } from '@/components/lists/add-book-to-list';
+import { ShareBookButton } from '@/components/books/share-book-button';
+import { JsonLd } from '@/components/json-ld';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const book = await getBook(slug);
-  const description = book?.synopsis?.slice(0, 160) ?? (book ? `Conheça ${book.title} no clube de leitura DIYSPUR.` : undefined);
+  const authorName = book?.authors?.name ? ` por ${book.authors.name}` : '';
+  const title = book ? `${book.title} — Clube de Leitura e Discussão | DIYSPUR` : 'Livro não encontrado | DIYSPUR';
+  const description = book?.synopsis
+    ? `Participe do clube de leitura de ${book.title}${authorName}. Cronograma de capítulos, avisos de conteúdo e debates ao vivo sem spoilers no DIYSPUR.`
+    : (book ? `Conheça ${book.title} no clube de leitura DIYSPUR.` : undefined);
+
   return book
-    ? { title: book.title, description, openGraph: { title: book.title, description, images: book.cover_url ? [book.cover_url] : undefined } }
-    : { title: 'Livro não encontrado' };
+    ? {
+        title,
+        description,
+        openGraph: {
+          title,
+          description,
+          images: book.cover_url ? [book.cover_url] : undefined,
+        },
+      }
+    : { title: 'Livro não encontrado | DIYSPUR' };
 }
 
 export default async function BookDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,8 +55,24 @@ export default async function BookDetailPage({ params }: { params: Promise<{ slu
     { label: 'ISBN-13', value: book.isbn13 },
   ].filter((detail) => detail.value !== null);
 
+  const bookSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: book.title,
+    author: book.authors?.name ? { '@type': 'Person', name: book.authors.name } : undefined,
+    isbn: book.isbn13 ?? undefined,
+    numberOfPages: book.total_pages ?? undefined,
+    publisher: book.publisher ? { '@type': 'Organization', name: book.publisher } : undefined,
+    inLanguage: book.language ?? 'pt-BR',
+    image: book.cover_url ?? undefined,
+    description: book.synopsis ?? undefined,
+    url: `https://diyspur.vercel.app/livros/${book.slug}`,
+  };
+
   return (
     <div className="container">
+      <JsonLd data={bookSchema} />
+
       <header className="detail-head">
         <nav className="breadcrumbs" aria-label="Trilha de navegação">
           <Link href="/">Início</Link><span aria-hidden="true">/</span>
@@ -103,20 +134,34 @@ export default async function BookDetailPage({ params }: { params: Promise<{ slu
                 </ul>
               </section>
             ) : null}
-            {safeExternal ? (
-              <a
-                className="button button-small"
-                href={`/api/affiliate/${encodeURIComponent(book.slug)}`}
-                target="_blank"
-                rel="sponsored noopener noreferrer"
-              >
-                Encontrar o livro <span aria-hidden="true">↗</span>
-              </a>
-            ) : null}
+
+            {/* Seção Onde Comprar & Compartilhar Leitura (MON-01 & SOCIAL-01) */}
+            <div className="book-purchasing-panel" style={{ marginTop: '24px', padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+              <span className="eyebrow">Acompanhe a leitura</span>
+              <p style={{ fontSize: 'var(--text-body-sm)', color: 'var(--text-secondary)', margin: '4px 0 14px' }}>
+                Tenha seu exemplar físico ou digital (Kindle/e-Reader) para participar das conversas capítulo a capítulo.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {safeExternal ? (
+                  <a
+                    className="btn btn-primary btn-sm"
+                    href={`/api/affiliate/${encodeURIComponent(book.slug)}`}
+                    target="_blank"
+                    rel="sponsored noopener noreferrer"
+                  >
+                    Comprar exemplar na Amazon <span aria-hidden="true">↗</span>
+                  </a>
+                ) : null}
+                <ShareBookButton bookTitle={book.title} bookSlug={book.slug} />
+              </div>
+            </div>
+
             {book.readerLists ? (
-              <AddBookToList bookId={book.id} lists={book.readerLists} />
+              <div style={{ marginTop: '16px' }}>
+                <AddBookToList bookId={book.id} lists={book.readerLists} />
+              </div>
             ) : (
-              <p className="field-hint">
+              <p className="field-hint" style={{ marginTop: '16px' }}>
                 Entre para guardar este livro em uma lista privada.
               </p>
             )}

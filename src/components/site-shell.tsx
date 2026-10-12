@@ -1,17 +1,8 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase/clients';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { DesktopNav } from '@/components/desktop-nav';
 import { MobileNav } from '@/components/mobile-nav';
-
-const links = [
-  { href: '/livros', label: 'Explorar livros' },
-  { href: '/clubes', label: 'Clubes' },
-  { href: '/diario', label: 'Diário' },
-  { href: '/listas', label: 'Listas' },
-  { href: '/calendario', label: 'Encontros' },
-  { href: '/comunidade', label: 'Comunidade' },
-  { href: '/votacao', label: 'Votação' },
-];
 
 export async function SiteHeader() {
   let signedIn = false;
@@ -32,11 +23,7 @@ export async function SiteHeader() {
           <span className="wordmark-icon" aria-hidden="true">d</span>
           <span className="wordmark-text">diyspur<span className="wordmark-period">.</span></span>
         </Link>
-        <nav className="nav-links" aria-label="Navegação principal">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href}>{link.label}</Link>
-          ))}
-        </nav>
+        <DesktopNav />
         <div className="nav-actions">
           <ThemeToggle />
           {signedIn ? (
@@ -54,7 +41,7 @@ export async function SiteHeader() {
               </Link>
             </>
           )}
-          <MobileNav links={links} signedIn={signedIn} />
+          <MobileNav signedIn={signedIn} />
         </div>
       </div>
     </header>

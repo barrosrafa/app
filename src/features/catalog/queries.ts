@@ -68,6 +68,45 @@ export async function getSeason(slug: string) {
   return { season: season as Season, book: book.data, chapters: (chapterResult.data ?? []) as Chapter[], chapterAccess: (accessResult.data ?? []) as ChapterAccess[], milestones };
 }
 
+export type ActiveSeasonInfo = {
+  season: Season;
+  book: { id: string; title: string; slug: string; cover_url: string | null; total_chapters: number | null; total_pages: number | null } | null;
+  totalChapters: number;
+  publishedChapters: number;
+  nextMeeting?: Meeting | null;
+};
+
+export async function getActiveSeason(): Promise<ActiveSeasonInfo | null> {
+  const client = await createServerSupabase();
+  const { data: season, error } = await client
+    .from('seasons')
+    .select('id,number,title,slug,book_id,status,description,starts_at,ends_at,cover_url')
+    .eq('status', 'active')
+    .order('starts_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !season) return null;
+
+  const [bookResult, chaptersResult, meetingsResult] = await Promise.all([
+    client.from('books').select('id,title,slug,cover_url,total_chapters,total_pages').eq('id', season.book_id).maybeSingle(),
+    client.from('chapters').select('id,number,published_at').eq('season_id', season.id).order('number', { ascending: true }),
+    client.from('meetings').select('id,chapter_id,title,status,kind,scheduled_at,duration_min,meeting_url,location,agenda').gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true }).limit(1).maybeSingle(),
+  ]);
+
+  const chapters = chaptersResult.data ?? [];
+  const now = Date.now();
+  const published = chapters.filter((c) => !c.published_at || Date.parse(c.published_at) <= now).length;
+
+  return {
+    season: season as Season,
+    book: bookResult.data,
+    totalChapters: chapters.length || (bookResult.data?.total_chapters ?? 0),
+    publishedChapters: published,
+    nextMeeting: (meetingsResult.data as Meeting | null) ?? null,
+  };
+}
+
 export async function getMeetings(): Promise<Meeting[]> {
   const client = await createServerSupabase();
   const { data, error } = await client.from('meetings').select('id,chapter_id,title,status,kind,scheduled_at,duration_min,meeting_url,location,agenda').order('scheduled_at').limit(36);

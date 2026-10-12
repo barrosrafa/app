@@ -69,51 +69,63 @@ export default async function ClubPage({ params }: { params: Promise<{ slug: str
 
   return (
     <section className="container">
-      <header className="page-intro">
-        <span className="eyebrow">{club.is_private ? 'Clube privado' : 'Clube público'}</span>
-        <h1>{club.name}</h1>
-        {club.description && <p>{club.description}</p>}
+      <header className="club-header-card">
+        <div className="club-header-info">
+          <div className="detail-pills">
+            <span className="status-pill">{club.is_private ? 'Clube privado' : 'Clube público'}</span>
+          </div>
+          <h1 className="club-header-title">{club.name}</h1>
+          {club.description && <p className="club-header-desc">{club.description}</p>}
+          <div className="club-member-indicator">
+            <span className="club-member-dot" aria-hidden="true" />
+            <span>
+              <strong>{data.totalMembers}</strong> {data.totalMembers === 1 ? 'leitor participando' : 'leitores participando'}
+            </span>
+          </div>
+        </div>
+        <div className="club-header-actions">
+          <ClubMembershipActions
+            clubId={club.id}
+            isMember={data.isMember}
+            isOwner={isOwner}
+            isPrivate={club.is_private}
+          />
+        </div>
       </header>
 
       <div className="member-grid">
-        <section aria-labelledby="club-community-heading" className="member-card">
+        <section aria-labelledby="club-season-heading" className="member-card">
           <div className="section-head">
             <div>
-              <span className="eyebrow">Comunidade</span>
-              <h2 id="club-community-heading">
-                {data.totalMembers} {data.totalMembers === 1 ? 'leitor' : 'leitores'}
+              <span className="eyebrow">Ciclo de leitura</span>
+              <h2 id="club-season-heading">
+                {currentSeasonData?.season ? 'Temporada em andamento' : 'Painel de leitura'}
               </h2>
             </div>
-            <ClubMembershipActions
-              clubId={club.id}
-              isMember={data.isMember}
-              isOwner={isOwner}
-              isPrivate={club.is_private}
-            />
           </div>
 
           {currentSeasonData?.season ? (
-            <div style={{ marginTop: '16px', padding: '16px', background: 'var(--surface-2)', borderRadius: 'var(--radius-md)' }}>
-              <span className="eyebrow">Leitura em andamento</span>
+            <div className="club-reading-panel">
+              <span className="eyebrow">Leitura ativa</span>
               <h3 style={{ marginTop: '4px', marginBottom: '8px' }}>
                 {currentSeasonData.book?.title ?? currentSeasonData.season.title}
               </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: '16px' }}>
+              <p className="field-hint" style={{ marginBottom: '16px' }}>
                 Ciclo: {currentSeasonData.season.title}
               </p>
-              <Link className="button button-small" href={`/temporadas/${currentSeasonData.season.slug}`}>
+              <Link className="btn btn-primary btn-sm" href={`/temporadas/${currentSeasonData.season.slug}`}>
                 Acompanhar capítulos do ciclo →
               </Link>
             </div>
           ) : (
-            <p>
+            <p className="field-hint">
               O painel de leitura do clube aparecerá aqui quando um ciclo e temporada forem definidos pelo responsável.
             </p>
           )}
         </section>
 
         <aside className="chapter-aside">
-          <h2>Acesso</h2>
+          <h2>Seu acesso</h2>
           <p>
             {isOwner
               ? 'Você é o responsável por este clube.'

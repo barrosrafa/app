@@ -4,17 +4,43 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export interface NavLinkItem {
-  href: string;
-  label: string;
+export interface NavSection {
+  title: string;
+  items: { href: string; label: string }[];
 }
 
+const defaultSections: NavSection[] = [
+  {
+    title: 'Explorar',
+    items: [
+      { href: '/livros', label: 'Explorar livros' },
+      { href: '/clubes', label: 'Clubes de leitura' },
+    ],
+  },
+  {
+    title: 'Comunidade',
+    items: [
+      { href: '/comunidade', label: 'Conversas da comunidade' },
+      { href: '/calendario', label: 'Encontros ao vivo' },
+      { href: '/votacao', label: 'Votação do próximo livro' },
+    ],
+  },
+  {
+    title: 'Pessoal',
+    items: [
+      { href: '/diario', label: 'Diário de leitura' },
+      { href: '/listas', label: 'Minhas listas' },
+      { href: '/metas', label: 'Metas anuais' },
+      { href: '/minha-fila', label: 'Minha fila (Up Next)' },
+    ],
+  },
+];
+
 interface MobileNavProps {
-  links: NavLinkItem[];
   signedIn?: boolean;
 }
 
-export function MobileNav({ links, signedIn = false }: MobileNavProps) {
+export function MobileNav({ signedIn = false }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -74,24 +100,33 @@ export function MobileNav({ links, signedIn = false }: MobileNavProps) {
         className={`nav-mobile-panel ${open ? 'open' : ''}`}
         role={open ? 'dialog' : undefined}
         aria-modal={open ? true : undefined}
-        aria-label="Menu móvel"
+        aria-label="Menu móvel de navegação"
       >
-        <nav className="nav-mobile-links" aria-label="Navegação móvel principal">
-          {links.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`nav-mobile-link ${isActive ? 'active' : ''}`}
-                onClick={() => setOpen(false)}
-              >
-                <span>{link.label}</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="nav-mobile-scroll" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 140px)', paddingRight: '4px' }}>
+          {defaultSections.map((section) => (
+            <div key={section.title} style={{ marginBottom: '20px' }}>
+              <span className="eyebrow" style={{ display: 'block', marginBottom: '8px', paddingLeft: '8px' }}>
+                {section.title}
+              </span>
+              <nav className="nav-mobile-links" aria-label={`Seção ${section.title}`}>
+                {section.items.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`nav-mobile-link ${isActive ? 'active' : ''}`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <span>{link.label}</span>
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
+        </div>
 
         <div className="nav-mobile-actions">
           {signedIn ? (

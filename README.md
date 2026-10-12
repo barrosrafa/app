@@ -485,3 +485,39 @@ Esta release consolida o fechamento dos gaps de auditoria de produção (itens B
 - **Vitest (`vitest run`):** 21 testes aprovados em 6 suítes unitárias (`goals-schemas`, `newsletter-schemas`, `meeting-state`, `safe-redirect`, `polls`, `chapter-schemas`).
 - **Turbopack Build (`next build`):** 32 rotas estáticas e dinâmicas compiladas com sucesso para produção.
 
+
+## Release de Implementação do SDD e Auditoria Multidisciplinar — 2026-10-11
+
+Esta release conclui a implementação das recomendações prioritárias da auditoria multidisciplinar e do SDD de produção do DIYSPUR:
+
+### 1. Correções Críticas (P0)
+- **UX-01 (Página de Clubes):** Reestruturação completa do cabeçalho da rota `/clubes/[slug]` (`.club-header-card`) com container flexível fluido, indicador pulsante de leitores ativos e separação clara entre metadados e botão de ação, eliminando de forma definitiva o problema de sobreposição visual do botão "Entrar no clube".
+- **SEC-01 (Sanitização de Open Redirect):** Implementação da função utilitária `getSafeRedirectUrl` em `src/lib/safe-redirect.ts`, garantindo que parâmetros de redirecionamento sejam estritamente caminhos relativos internos, bloqueando esquemas arbitrários (`http:`, `https:`, `javascript:`) e sequências maliciosas (`//`, `/\`).
+- **ENG-01 (Proteção contra Spoilers):** Componente unificado `CommentSpoilerCard` (`src/components/comments/comment-spoiler-card.tsx`) com banner de aviso âmbar (`⚠️ Este comentário contém spoiler deste capítulo`), botão interativo de revelação ("Revelar comentário") e opção de ocultar novamente, integrado tanto nos capítulos (`src/components/chapters/chapter-interactions.tsx`) quanto no feed comunitário (`src/app/comunidade/page.tsx`), preservando o bloqueio server-side (`is_locked`).
+
+### 2. Refinamento de Navegação e Home (P1)
+- **NAV-01 (Navegação Desktop e Mobile):** Criação do componente `DesktopNav` (`src/components/desktop-nav.tsx`) com menus dropdown temáticos acessíveis:
+  - **Explorar ▾:** Catálogo de Livros (`/livros`) e Clubes de Leitura (`/clubes`).
+  - **Comunidade ▾:** Conversas e Debates (`/comunidade`), Calendário de Encontros (`/calendario`) e Votações (`/votacao`).
+  - **Diário:** Atalho direto prioritário (`/diario`).
+  - `MobileNav` reorganizado em seções identificadas (*Explorar*, *Comunidade*, *Pessoal*), reduzindo a sobrecarga cognitiva e evitando quebras de menu em telas médias.
+- **HOME-01 (Redesenho da Página Inicial):** Implementação do wireframe completo da Seção 7.1 do relatório de auditoria:
+  - Hero com H1 ajustado, CTAs direcionados ("Começar a ler junto ↗", "Descobrir leituras ↗" e "Ver como funciona ↓").
+  - Seção explicativa **"Como funciona o DIYSPUR em 3 passos"** (Escolha a Temporada, Leia no Seu Ritmo, Debata Sem Spoilers).
+  - Bloco **Temporada em Destaque (Season Spotlight)** consultando automaticamente o ciclo ativo (`getActiveSeason`), com capa, progresso da comunidade, dados do próximo encontro e link direto.
+  - Grade em 2 colunas com **Próximos Encontros** e **Votação Popular**.
+  - Seção de **Prova Social e Depoimentos** reais da comunidade.
+- **CAL-01 (Calendário Google Agenda):** Integração de link web direto para adicionar encontros ao Google Agenda (`src/lib/calendar-links.ts`) ao lado do arquivo `.ics` para download.
+
+### 3. SEO, Monetização e Social (P1/P2)
+- **SEO-01 (Dados Estruturados Schema.org):** Injeção de Schema.org `Book` nas fichas de livros (`/livros/[slug]`) e Schema.org `Event`/`VirtualEvent` no calendário (`/calendario`), com títulos e meta descrições otimizadas para busca orgânica no Brasil.
+- **MON-01 (Onde Comprar & Afiliados):** Bloco "Onde comprar seu exemplar" na ficha técnica dos livros com botão de compra na Amazon via `/api/affiliate/[slug]`.
+- **SOCIAL-01 (Buddy Read / Convidar Amigo):** Componente `ShareBookButton` (`src/components/books/share-book-button.tsx`) com suporte a `navigator.share` nativo em mobile e cópia assistida com feedback visual temporário.
+- **ACC-01 (Acessibilidade WCAG 2.2 AA):** Inputs do formulário de autenticação enriquecidos com `aria-invalid` e `aria-describedby` conectados às mensagens de validação.
+- **OBS-01 (Telemetria & Analytics):** Módulo de telemetria tipado `src/lib/analytics.ts` com o dicionário de eventos da auditoria (Seção 14.2), suportando PostHog com fallback gracioso.
+
+### 4. Estado de Validação
+- **TypeScript (`tsc --noEmit`):** 0 erros.
+- **ESLint (`eslint .`):** 0 avisos ou erros.
+- **Vitest (`vitest run`):** 31 testes aprovados em 8 suítes unitárias (`analytics`, `calendar-links`, `chapter-schemas`, `goals-schemas`, `meeting-state`, `newsletter-schemas`, `polls`, `safe-redirect`).
+- **Turbopack Build (`next build`):** 32 rotas estáticas e dinâmicas compiladas com sucesso para produção.

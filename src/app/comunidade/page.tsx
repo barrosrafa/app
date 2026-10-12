@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase/clients';
 import { ReportButton } from '@/components/moderation/report-button';
+import { CommentSpoilerCard } from '@/components/comments/comment-spoiler-card';
 
 export const metadata: Metadata = {
   title: 'Comunidade',
@@ -85,18 +86,12 @@ export default async function CommunityPage() {
                       Capítulo {chapter.number} · {chapter.title}
                     </Link>
                   )}
-                  {post.is_locked || post.content === null ? (
-                    <p className="spoiler-locked">
-                      Spoiler protegido. Avance seu progresso no capítulo para revelar o texto.
-                    </p>
-                  ) : post.is_spoiler ? (
-                    <details>
-                      <summary className="text-link">Este comentário pode conter spoiler. Revelar?</summary>
-                      <p>{post.content}</p>
-                    </details>
-                  ) : (
-                    <p>{post.content}</p>
-                  )}
+                  <CommentSpoilerCard
+                    content={post.content}
+                    isSpoiler={post.is_spoiler}
+                    isLocked={post.is_locked}
+                    chapterNumber={chapter?.number}
+                  />
                   <span className="field-hint">
                     {author?.display_name ?? (author?.username ? `@${author.username}` : 'Leitor da comunidade')} ·{' '}
                     {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(post.created_at))}
